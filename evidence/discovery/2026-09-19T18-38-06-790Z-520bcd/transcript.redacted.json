@@ -1,0 +1,262 @@
+{
+  "runId": "2026-09-19T18-38-06-790Z-520bcd",
+  "goal": "Log in, look up member {member_id}, and read their current savings balance",
+  "target": "http://localhost:4173",
+  "name": "lookup_member_balance_discovered",
+  "model": "claude-sonnet-4-6",
+  "status": "goal_complete",
+  "turns": [
+    {
+      "turnIndex": 1,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 4665,
+        "outputTokens": 86
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/001-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e0",
+          "text": "{{secret:username}}"
+        },
+        "id": "toolu_01JQ9ZmoPSnjySdbq7Cy7mnn"
+      }
+    },
+    {
+      "turnIndex": 2,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 6367,
+        "outputTokens": 83
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/002-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e1",
+          "text": "{{secret:password}}"
+        },
+        "id": "toolu_018xyCkSUbzFEbE7xe9x8W3Z"
+      }
+    },
+    {
+      "turnIndex": 3,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 8066,
+        "outputTokens": 62
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/003-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e2"
+        },
+        "id": "toolu_01VdzxSyHgqcHLWwV8owJSg7"
+      }
+    },
+    {
+      "turnIndex": 4,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 9757,
+        "outputTokens": 88
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/004-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e2",
+          "text": "10001"
+        },
+        "id": "toolu_01GbywfJWmRns98qg4bZ7tZL"
+      }
+    },
+    {
+      "turnIndex": 5,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 11475,
+        "outputTokens": 66
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/005-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e3"
+        },
+        "id": "toolu_01S5yiwZXiCpnmEY6yX2joHX"
+      }
+    },
+    {
+      "turnIndex": 6,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 13188,
+        "outputTokens": 85
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Testy McTestface\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nSearch results\nMember ID\nName\nMember since\n10001\n2015-03-12",
+      "screenshotPath": "screenshots/006-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e2"
+        },
+        "id": "toolu_011VbtBnzdc2RUA8qL4p9v8F"
+      }
+    },
+    {
+      "turnIndex": 7,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 14920,
+        "outputTokens": 80
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Testy McTestface\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nSearch results\nMember ID\nName\nMember since\n10001\n2015-03-12",
+      "screenshotPath": "screenshots/007-navigate.png",
+      "toolCall": {
+        "name": "navigate",
+        "input": {
+          "url": "http://localhost:4173/members/10001"
+        },
+        "id": "toolu_01PxTo1UX6kQ7QHFPNjvcWnj"
+      }
+    },
+    {
+      "turnIndex": 8,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 16598,
+        "outputTokens": 80
+      },
+      "retried": false,
+      "url": "http://localhost:4173/members/10001",
+      "title": "Error",
+      "snapshotText": "URL: http://localhost:4173/members/10001\nTITLE: Error\nINTERACTIVE ELEMENTS:\n(none)\n\nSTATIC TEXT:\nCannot GET /members/10001",
+      "screenshotPath": "screenshots/008-navigate.png",
+      "toolCall": {
+        "name": "navigate",
+        "input": {
+          "url": "http://localhost:4173/"
+        },
+        "id": "toolu_01S8ngxyyJfbvwC9EL8Ecpkb"
+      }
+    },
+    {
+      "turnIndex": 9,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 18314,
+        "outputTokens": 94
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/009-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e2",
+          "text": "10001"
+        },
+        "id": "toolu_01MrNCr8hTkg4HDbm7ULiHZ5"
+      }
+    },
+    {
+      "turnIndex": 10,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 20038,
+        "outputTokens": 87
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/010-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e3"
+        },
+        "id": "toolu_01JidrKJnQDy2gpqkoKUcVA9"
+      }
+    },
+    {
+      "turnIndex": 11,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 21772,
+        "outputTokens": 97
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Testy McTestface\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nSearch results\nMember ID\nName\nMember since\n10001\n2015-03-12",
+      "screenshotPath": "screenshots/011-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e2"
+        },
+        "id": "toolu_01R3UR4dkYBRupffbXPm4rji"
+      }
+    },
+    {
+      "turnIndex": 12,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 23545,
+        "outputTokens": 176
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Open sub-account\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember detail\nMember ID: 10001\nName: Testy McTestface\nMember since: 2015-03-12\nSavings balance: 4,200.00\nChecking balance: 1,100.00",
+      "screenshotPath": "screenshots/012-goal_complete.png",
+      "toolCall": {
+        "name": "goal_complete",
+        "input": {
+          "checkpoint": {
+            "text": "Savings balance: 4,200.00"
+          },
+          "outputs": {
+            "savings_balance": {
+              "value": "4,200.00"
+            }
+          },
+          "summary": "Successfully logged in, searched for member 10001 (Testy McTestface), and found their current savings balance is 4,200.00."
+        },
+        "id": "toolu_017qdZARbUZNLedgcTxyiVQF"
+      }
+    }
+  ]
+}
