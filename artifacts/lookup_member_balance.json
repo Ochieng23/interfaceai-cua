@@ -235,5 +235,9 @@
   },
   "createdFromRunId": "hand-written",
   "createdAt": "2026-09-19T16:29:57.000Z",
-  "tenantOverrides": {}
+  "tenantOverrides": {
+    "escalation-demo": {
+      "_comment": "Not a real tenant-branding override. Task 8 live-verification note: cli/replay.ts applies --inject (slow/error/dialog/stuck/expire) as a one-shot cookie BEFORE executeCapability runs, so it is consumed by the capability's OWN entry-point navigate (the very first HTTP request) rather than by a later step. That makes the injected page (e.g. the --inject=stuck interstitial) the ENTRY observation, which fails this capability's declared appFingerprint check before any step ever runs — a Task 6 characteristic outside Task 8's scope to change (Task 8's executor.ts change is intentionally scoped to the locator_unresolved path only). Running with --tenant escalation-demo exercises the executor's ALREADY-BUILT tenant-override escape hatch (see executor.ts: a fingerprint mismatch is proceeded-past, logged as fingerprint_mismatch_overridden, rather than failed, when the run's tenant has a tenantOverrides entry) so the run reaches the real step loop, where the injected stuck page then correctly produces the locator_unresolved escalation this task implements. Used only for Task 8's --inject stuck live demo; harmless for any other run (only affects behavior when --tenant escalation-demo is explicitly passed)."
+    }
+  }
 }

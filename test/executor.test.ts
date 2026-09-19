@@ -508,6 +508,85 @@ describe("executeCapability", () => {
     });
   });
 
+  describe("locator_unresolved escalation (Task 8)", () => {
+    it("REGRESSION: with the DEFAULT hook, a locator_unresolved scenario produces the IDENTICAL result as before this task's change", async () => {
+      const stuckState: FakePageState = {
+        url: "http://localhost:4173/stuck",
+        title: "stuck",
+        snapshotText: "e0: nothing here ever resolves",
+        // no `resolves` -> every strategyChain tier is permanently unresolved
+      };
+      const fake = new FakeSurface([ENTRY_STUB, stuckState]);
+      const step: Step = {
+        id: "s1",
+        description: "Click a control that never resolves",
+        action: "click",
+        target: { strategyChain: [{ kind: "role", role: "button", accessibleName: "Whatever" }] },
+        risk: "reversible",
+        timeoutMs: 1000,
+      };
+      const capability = baseCapability({ steps: [step] });
+
+      // No `hooks` passed at all -> the executor's DEFAULT onEscalationNeeded, which resolves
+      // "aborted" immediately. Every field below matches exactly what this function returned
+      // for this scenario before the locator_unresolved escalation hook call was added.
+      const result = await executeCapability(capability, {}, fake, { runId: "run-locator-default" });
+
+      expect(result.status).toBe("failure");
+      expect(result.failureClass).toBe("locator_unresolved");
+      expect(result.failedStepId).toBe("s1");
+      expect(result.observed).toBe(stuckState.snapshotText.slice(0, 200));
+      expect(result.stepTraces).toHaveLength(0);
+      expect(result.recoveriesApplied).toHaveLength(0);
+    });
+
+    it("a CUSTOM hook that resumes retries the step once and, if the retry now resolves, the run completes normally", async () => {
+      const stuckState: FakePageState = {
+        url: "http://localhost:4173/stuck",
+        title: "stuck",
+        snapshotText: "e0: nothing here resolves yet",
+        resolves: () => false,
+      };
+      const recoveredState: FakePageState = {
+        url: "http://localhost:4173/stuck",
+        title: "stuck",
+        snapshotText: "e0: button 'Continue'",
+        resolves: () => true,
+      };
+      const fake = new FakeSurface([ENTRY_STUB, stuckState, recoveredState]);
+
+      let hookCalls = 0;
+      const hooks: ExecutorHooks = {
+        onEscalationNeeded: async (): Promise<EscalationOutcome> => {
+          hookCalls += 1;
+          // Simulate a human fixing the live page (e.g. the stuck page's randomized control
+          // is now the resolvable one) before typing "resume" in the operator CLI.
+          fake.advance();
+          return "resumed";
+        },
+      };
+
+      const step: Step = {
+        id: "s1",
+        description: "Click the randomized-name continue control",
+        action: "click",
+        target: { strategyChain: [{ kind: "role", role: "button", accessibleName: "Continue" }] },
+        risk: "reversible",
+        timeoutMs: 1000,
+      };
+      const capability = baseCapability({ steps: [step] });
+
+      const result = await executeCapability(capability, {}, fake, { runId: "run-locator-resumed", hooks });
+
+      expect(result.status).toBe("success");
+      expect(hookCalls).toBe(1);
+      expect(result.recoveriesApplied).toContain("human_intervention:s1");
+      expect(result.stepTraces).toHaveLength(1);
+      expect(result.stepTraces[0]?.stepId).toBe("s1");
+      expect(result.stepTraces[0]?.resolvedTier).toBe(0);
+    });
+  });
+
   it("fingerprint mismatch with no tenant override fails with failureClass unknown_condition", async () => {
     const fake = new FakeSurface([ENTRY_STUB]);
     const capability = baseCapability({ appFingerprint: "expected-fingerprint-value" });

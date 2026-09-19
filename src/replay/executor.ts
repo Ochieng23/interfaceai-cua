@@ -564,7 +564,7 @@ export async function executeCapability(
     // "recovered" or "none" both fall through to attempting the step's own action.
 
     // LOCATE + ACT
-    const actOutcome = await attemptStepAction(step);
+    let actOutcome = await attemptStepAction(step);
 
     if (actOutcome.kind === "exit") {
       return actOutcome.result;
@@ -578,14 +578,58 @@ export async function executeCapability(
       if (handled.kind === "exit") {
         return handled.result;
       }
-      // Neither a declared nor generic outcome explains it — fail. We never proceed past
-      // an unresolved locator.
-      return finish({
-        status: "failure",
-        failureClass: "locator_unresolved",
-        failedStepId: step.id,
-        observed: obs.snapshotText.slice(0, 200),
-      });
+
+      // Neither a declared nor generic outcome explains it. Before giving up, offer this to
+      // a human via the SAME `onEscalationNeeded` hook every other stuck condition in this
+      // file already uses (SPEC §10 lists `--inject stuck`'s randomized-per-render control —
+      // a locator that can never stably resolve — as exactly this failure mode).
+      //
+      // CRITICAL backward-compat constraint: the DEFAULT hook (used by every caller that
+      // hasn't wired up real human-in-the-loop handling, including every existing test in
+      // `test/executor.test.ts`) resolves "aborted" on its very first call. In that case we
+      // fall through to the EXACT SAME `failure(locator_unresolved)` this function always
+      // returned here, unchanged — we do NOT map an aborted outcome to `status: "escalated"`
+      // the way the OTHER escalation triggers (irreversible-step, generic-detector) do;
+      // `status: "escalated"` stays reserved for those.
+      const escalationOutcome = await requestEscalation(
+        step,
+        `locator_unresolved: no strategy in the locator chain resolved (${obs.snapshotText.slice(0, 200)})`,
+      );
+
+      let resolvedViaEscalation = false;
+      if (escalationOutcome === "resumed") {
+        recoveriesApplied.push(`human_intervention:${step.id}`);
+        const satisfied = await isStepPreconditionSatisfied(step);
+        if (satisfied) {
+          actOutcome = { kind: "resolved_by_human" };
+          resolvedViaEscalation = true;
+        } else {
+          // The one allowed same-step retry, via the SAME funnel every other retry in this
+          // file uses (`performOneAct`) — which is also where the irreversible-step
+          // "attempt exactly once" guard lives, so an irreversible step whose one real
+          // attempt already ran (even if that very attempt is what produced this
+          // locator_unresolved) correctly refuses a second real action here (returns
+          // `{ kind: "refused" }`, which falls into the `!resolvedViaEscalation` branch
+          // below exactly like any other unresolved retry) rather than silently retrying it.
+          const retried = await performOneAct(step);
+          if (retried.kind === "ok") {
+            actOutcome = { kind: "ok", resolvedTier: retried.resolvedTier, resolvedKind: retried.resolvedKind };
+            resolvedViaEscalation = true;
+          }
+        }
+      }
+
+      if (!resolvedViaEscalation) {
+        // We never proceed past an unresolved locator.
+        return finish({
+          status: "failure",
+          failureClass: "locator_unresolved",
+          failedStepId: step.id,
+          observed: obs.snapshotText.slice(0, 200),
+        });
+      }
+      // Falls through to the normal post-action pipeline below (waitForSettle / POST-DETECT /
+      // checkpoint), exactly as the "ok" / "resolved_by_human" branches always have.
     }
 
     let resolvedTier: number | null = null;

@@ -9,16 +9,18 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 
 import { Command } from "commander";
-import { chromium } from "playwright";
 import { ZodError } from "zod";
 
 import { computeFingerprint } from "../perception/fingerprint";
 import { executeCapability } from "../replay/executor";
-import { createRunId } from "../evidence/run";
+import { createRunId, ensureRunDir } from "../evidence/run";
+import { EvidenceLogger } from "../evidence/logger";
 import { loadPolicy } from "../guardrails/policy";
 import { Capability } from "../schema/capability";
 import { GuardedSurface } from "../surface/GuardedSurface";
 import { PlaywrightSurface } from "../surface/PlaywrightSurface";
+import { createEscalationHook, launchSharedSession, readControl } from "../escalation/session";
+import { registerSecretValue } from "../guardrails/redact";
 
 // Best-effort .env load. Every var this CLI itself reads (DEMO_USER/DEMO_PASS, HEADLESS) has
 // a documented fallback or is optional, so a missing/malformed .env is never fatal here —
@@ -188,14 +190,34 @@ async function main(): Promise<void> {
   const cliParams = parseCliParams(opts.param);
   const params = resolveParams(capability, cliParams);
 
-  // Default headless=true (CI-friendly, matches SPEC's demo path); set HEADLESS=false while
-  // debugging this task manually to watch the browser drive the real mock app.
-  const headless = process.env.HEADLESS !== "false";
-  const browser = await chromium.launch({ headless });
+  // Register secret VALUES for redaction before ANY logging happens (same discipline as
+  // `src/replay/executor.ts`'s own pii registration, and `cli/discover.ts`'s identical
+  // DEMO_USER/DEMO_PASS registration). This was a latent gap before Task 8: nothing under
+  // `src/replay/**` ever logged a raw secret value (GuardedSurface resolves it only at the
+  // moment it hands off to the real Surface, and never returns/logs it), so redaction was
+  // never actually exercised for these values. Task 8's human-action capture changes that —
+  // it observes raw DOM `input`/`change` events, which DOES include values the automation
+  // itself fills in via GuardedSurface's secret substitution (e.g. while retrying a step
+  // after a human resumes an escalated run) — so these must be registered here, unconditional
+  // of whether this run ever actually escalates.
+  const demoUser = process.env.DEMO_USER;
+  const demoPass = process.env.DEMO_PASS;
+  if (demoUser) registerSecretValue(demoUser);
+  if (demoPass) registerSecretValue(demoPass);
+
+  const runId = createRunId();
+  const evidenceDir = ensureRunDir("replay", runId);
+  const policy = loadPolicy();
+  const logger = new EvidenceLogger(resolvePath(evidenceDir, "log.jsonl"), policy);
+
+  // Task 8 (SPEC §10): launched via `launchPersistentContext` + a fixed CDP port, NOT a plain
+  // `chromium.launch()` — this is what lets `cli/operator.ts`, running in a SEPARATE process,
+  // attach to this exact browser/page via `chromium.connectOverCDP` when a human needs to take
+  // over. See `src/escalation/session.ts`'s header comment for the full rationale.
+  const { context, page, cdpEndpoint } = await launchSharedSession(runId);
+  logger.log({ runId, event: "shared_session_launched", cdpEndpoint });
 
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-
     if (opts.inject) {
       const entryOrigin = new URL(capability.entryPoint).origin;
       const injectUrl = `${entryOrigin}/__inject?mode=${encodeURIComponent(opts.inject)}`;
@@ -205,22 +227,39 @@ async function main(): Promise<void> {
     }
 
     const playwrightSurface = new PlaywrightSurface(page);
-    const policy = loadPolicy();
     const guardedSurface = new GuardedSurface(playwrightSurface, policy, {
       capabilityStatus: opts.approveIrreversible ? "approved" : capability.status,
       secretProvider: makeSecretProvider(),
+      // Real ownership check (SPEC §9/§10): while `control.json` says a human has taken
+      // control, automation must never be able to call `act()` — even though in practice the
+      // executor is already blocked awaiting `onEscalationNeeded`'s promise during that
+      // window, this makes the invariant hold at GuardedSurface's own enforcement point too,
+      // not just "by construction" of the executor's call order.
+      getOwner: () => readControl(runId)?.owner ?? "automation",
+    });
+
+    // Task 8's real `onEscalationNeeded` hook (src/escalation/session.ts), replacing the
+    // executor's default "always abort" stub: writes intervention.json, transitions
+    // control.json, installs human-action capture, and polls for the operator's resume/abort.
+    const onEscalationNeeded = createEscalationHook(runId, page, capability, {
+      cdpEndpoint,
+      policy,
+      logger,
+      devInjected: opts.inject === "stuck",
     });
 
     const result = await executeCapability(capability, params, guardedSurface, {
-      runId: createRunId(),
+      runId,
       fingerprintFn: (observation) => computeFingerprint(observation.snapshotText),
       tenant: opts.tenant,
+      hooks: { onEscalationNeeded },
+      logger,
     });
 
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = result.status === "success" || result.status === "business_outcome" ? 0 : 1;
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
