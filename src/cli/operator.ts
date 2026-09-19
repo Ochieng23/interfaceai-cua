@@ -231,7 +231,7 @@ async function main(): Promise<void> {
   }
 
   await new Promise<void>((resolveFn) => {
-    rl.on("close", () => {
+    rl.on("close", async () => {
       // Deliberately do NOT call browser.close() here: this `browser` object came from
       // `connectOverCDP`, and the automation process still owns the actual browser/page —
       // closing it out from under a still-running (or about-to-resume) replay process would
@@ -242,6 +242,15 @@ async function main(): Promise<void> {
       // hangs indefinitely after the REPL closes, even though nothing is left for it to do).
       // `process.exit()` right after resolving is the deliberate, documented way this CLI
       // terminates itself without touching the remote browser's lifecycle.
+      //
+      // IMPORTANT: `close` can fire before the last queued command (from the serial `queue`
+      // above) has actually finished — readline emits it right after the final buffered
+      // "line" event, which for piped/non-interactive stdin can race ahead of an in-flight
+      // async handler (e.g. a `resume`/`abort` still awaiting `surface.act()`). Await the
+      // queue here so a scripted invocation can't silently lose its last command. An
+      // interactive human typing at a real terminal is unaffected either way, since
+      // `resume`/`abort` already close `rl` themselves only after their own handler resolves.
+      await queue;
       resolveFn();
     });
   });
