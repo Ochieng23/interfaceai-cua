@@ -1,0 +1,13 @@
+{
+  "runId": "2026-09-19T19-09-43-547Z-8a3920",
+  "kind": "replay",
+  "capabilityId": "lookup_member_balance",
+  "stepId": "fill_username",
+  "stepDescription": "Enter the username in the login form's Username field.",
+  "reason": "dev-only failure injection (--inject stuck): the app rendered an interstitial whose forward control has a randomized-per-render accessible name that can never stably resolve — this is deliberately unrecoverable by automation and requires a human to act on the live page.",
+  "currentUrl": "http://localhost:4173/login",
+  "screenshotPath": "intervention-2026-09-19T19-09-44-968Z.png",
+  "snapshotPath": "intervention-2026-09-19T19-09-44-968Z.txt",
+  "cdpEndpoint": "ws://127.0.0.1:9222/devtools/browser/509058a0-2a75-4ab0-8aeb-4a186c898ca7",
+  "createdAt": "2026-09-19T19:09:45.175Z"
+}

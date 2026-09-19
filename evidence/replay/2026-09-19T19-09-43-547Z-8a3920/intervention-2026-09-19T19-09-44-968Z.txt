@@ -1,0 +1,8 @@
+URL: http://localhost:4173/login
+TITLE: CU Console — First Federal CU
+INTERACTIVE ELEMENTS:
+e0: button "Continue-z8aor0"
+
+STATIC TEXT:
+One more step
+This screen requires manual confirmation to proceed.

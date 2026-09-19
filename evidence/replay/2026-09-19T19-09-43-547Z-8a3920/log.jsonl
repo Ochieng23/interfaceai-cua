@@ -1,0 +1,21 @@
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","event":"shared_session_launched","cdpEndpoint":"ws://127.0.0.1:9222/devtools/browser/509058a0-2a75-4ab0-8aeb-4a186c898ca7"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"fingerprint_mismatch_overridden","tenant":"escalation-demo","expected":"33565b684b22412149c9aaaeac294f3d5dc8e7788cd6a7d4daac8b28ef36d615","observed":"6c6be2878625e353f90c96e03821b4bc26f3df0bcbc48910af327267efafacbb"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"escalation_requested","stepId":"fill_username","reason":"locator_unresolved: no strategy in the locator chain resolved (URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: button \"Continue-z8aor0\"\n\nSTATIC TEXT:\nOne more step\nThis screen requires manual confirmation to proceed)","currentUrl":"http://localhost:4173/login"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","event":"escalation_intervention_prepared","stepId":"fill_username","reason":"dev-only failure injection (--inject stuck): the app rendered an interstitial whose forward control has a randomized-per-render accessible name that can never stably resolve — this is deliberately unrecoverable by automation and requires a human to act on the live page."}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","event":"control_paused_awaiting_human","stepId":"fill_username"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"operator_attached","cdpEndpoint":"ws://127.0.0.1:9222/devtools/browser/509058a0-2a75-4ab0-8aeb-4a186c898ca7"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"operator_snapshot","url":"http://localhost:4173/login"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"human_action","type":"click","role":"input","url":"http://localhost:4173/login"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"human_action","type":"submit","role":"form","url":"http://localhost:4173/login"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"operator_click","ref":"e0"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"operator_snapshot","url":"http://localhost:4173/login"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","actor":"human","event":"operator_resume"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","event":"control_resumed","stepId":"fill_username"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"escalation_resolved","stepId":"fill_username","outcome":"resumed"}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_username","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_password","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_login_submit","resolvedTier":0,"resolvedKind":"role","checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"navigate_to_search","resolvedTier":null,"resolvedKind":null,"checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_member_id","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_search_submit","resolvedTier":0,"resolvedKind":"css","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T19-09-43-547Z-8a3920","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_member_result_link","resolvedTier":0,"resolvedKind":"css","checkpointPassed":true,"resolvedByHuman":false}
