@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "1.1",
+  "id": "lookup_member_balance",
+  "name": "lookup_member_balance",
+  "version": "1.0.0",
+  "status": "draft",
+  "description": "Log in to CU Console, look up a member by ID, and read their current savings balance. Hand-written (Task 6 milestone) against the real mock app, not recorded by discovery — there is no discovery run yet. Although GET / embeds the member-search form in a same-origin <iframe> (see src/mockapp/pages/shell.ts), this capability's own steps navigate directly to /members/search as a top-level page after login: PlaywrightSurface's frame-aware snapshot/resolve implementation was independently verified against that live iframe during Task 6's Step 0 probing (see src/perception/snapshot.ts's header comment), but routing this capability's own steps through it as well would make successCheckpoint/Checkpoint url_matches checks unreliable, since a click inside an un-targeted iframe navigates only that iframe's document, leaving the top-level page.url() unchanged. Navigating directly to /members/search is also a completely realistic path (it's a real, independently-routable page, not an iframe-only fragment). Outcomes scope: merges member_not_found (required by SPEC's demo path), permission_denied, session_notice_dialog, and application_error from outcomes/cu-console.yaml verbatim. Deliberately OMITS that file's slow_load and session_expired entries after a real replay run against the live mock app demonstrated both have false-positive collisions with this capability's own normal flow: slow_load's detection (element_visible on the shell page's \"Home\" nav link) matches on every normal run once login redirects to the shell page (Home is always present there, injected-slow-response or not) — the seed file's own comment already flags this generic detection as something \"a real replay would substitute\" rather than reuse verbatim; session_expired's detection (url_matches \"/login$\") matches this capability's OWN deliberate first visit to /login (the entry point), incorrectly treating the very start of every run as a mid-run session expiry. Both are real bugs caught by actually running this artifact, not hypothesized — see REPORT.md.",
+  "targetApp": "http://localhost:4173",
+  "entryPoint": "http://localhost:4173/login",
+  "allowlistScope": ["/", "/login", "/members/**", "/member/**"],
+  "appFingerprint": "33565b684b22412149c9aaaeac294f3d5dc8e7788cd6a7d4daac8b28ef36d615",
+  "inputParams": [
+    {
+      "name": "username",
+      "type": "secret",
+      "required": true,
+      "description": "CU Console login username. Never read from --param; GuardedSurface resolves the real value from the DEMO_USER env var at act()-time via the {{secret:username}} placeholder (see cli/replay.ts's secretProvider).",
+      "pii": false
+    },
+    {
+      "name": "password",
+      "type": "secret",
+      "required": true,
+      "description": "CU Console login password. Never read from --param; GuardedSurface resolves the real value from the DEMO_PASS env var at act()-time via the {{secret:password}} placeholder (see cli/replay.ts's secretProvider).",
+      "pii": false
+    },
+    {
+      "name": "member_id",
+      "type": "string",
+      "required": true,
+      "description": "The credit-union member ID to look up (data.ts's synthetic member table uses IDs 10001..10008; any other numeric ID is a member_not_found business outcome, and 10007 is a restricted/permission_denied member).",
+      "pii": false,
+      "example": "10001"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savings_balance",
+      "type": "string",
+      "description": "The member's current savings balance as rendered on the member detail page (e.g. \"4,200.00\") — kept as a string rather than a parsed number to preserve the app's own comma-grouped formatting rather than silently reformatting a currency value.",
+      "source": {
+        "strategyChain": [
+          {
+            "kind": "text_anchor",
+            "text": "Savings balance",
+            "nearbyText": "Savings balance"
+          },
+          {
+            "kind": "xpath",
+            "selector": "//td[normalize-space(text())='Savings balance']/following-sibling::td[1]"
+          }
+        ],
+        "rationale": "No role/accessible-name applies to a static, non-interactive data cell whose VALUE is unknown ahead of time (that's the whole point of reading it) — a role+name locator would need to already know the balance to find it. text_anchor keyed to the adjacent label cell (\"Savings balance\") is the strongest reliable tier for this shape (src/mockapp/pages/memberDetail.ts renders it as a plain two-cell <tr>); xpath expressing the same \"value cell immediately after the label cell\" relationship structurally is the fallback. Verified against the live mock app (member 10001): resolves to a single element containing \"4,200.00\"."
+      },
+      "extraction": "text",
+      "pii": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "fill_username",
+      "description": "Enter the username in the login form's Username field.",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          { "kind": "role", "role": "textbox", "accessibleName": "Username" },
+          { "kind": "css", "selector": "input[name=\"username\"]" },
+          { "kind": "xpath", "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[1]/td/label/input" }
+        ],
+        "rationale": "role+name unique on the login page (verified live: getByRole('textbox',{name:'Username',exact:true}).count()===1); css via [name=username] is the natural next tier for a form field; xpath is the structural last resort. All three tiers individually verified live (count()===1 each), including the xpath tier by temporarily testing it in isolation — an earlier draft of this xpath had an extra spurious table/tbody/tr/td segment (copy-paste error) that resolved to count()===0; caught and fixed before committing."
+      },
+      "paramRef": "username",
+      "risk": "safe",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "fill_password",
+      "description": "Enter the password in the login form's Password field.",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          { "kind": "role", "role": "textbox", "accessibleName": "Password" },
+          { "kind": "css", "selector": "input[name=\"password\"]" },
+          { "kind": "xpath", "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[2]/td/label/input" }
+        ],
+        "rationale": "role+name unique on the login page (verified live: getByRole('textbox',{name:'Password',exact:true}).count()===1); css via [name=password] as the next tier; xpath as structural last resort. All three tiers individually verified live (count()===1 each)."
+      },
+      "paramRef": "password",
+      "risk": "safe",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "click_login_submit",
+      "description": "Click the login form's submit button to log in.",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          { "kind": "role", "role": "button", "accessibleName": "Log in" },
+          { "kind": "css", "selector": "input[type=\"submit\"]" },
+          { "kind": "xpath", "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[3]/td/input" }
+        ],
+        "rationale": "role+name unique on the login page (verified live: getByRole('button',{name:'Log in',exact:true}).count()===1, and clicking it genuinely logs in). Button text \"Log in\" does not match policy.yaml's irreversible_when.button_text_matches list, so this stays reversible risk, not irreversible. All three tiers individually verified live (count()===1 each), and the fixed xpath tier was exercised end-to-end (filled+clicked through purely via xpath locators) to confirm it genuinely logs in, not just resolves."
+      },
+      "risk": "reversible",
+      "timeoutMs": 5000,
+      "checkpoint": {
+        "kind": "url_matches",
+        "expectedUrlPattern": "^http://localhost:4173/$",
+        "description": "Login succeeded and landed on the CU Console shell page."
+      }
+    },
+    {
+      "id": "navigate_to_search",
+      "description": "Navigate directly to the member search page (see this capability's top-level description for why this bypasses the shell's iframe).",
+      "action": "navigate",
+      "valueLiteral": "http://localhost:4173/members/search",
+      "risk": "safe",
+      "timeoutMs": 5000,
+      "checkpoint": {
+        "kind": "text_matches",
+        "expectedText": "Member search",
+        "description": "Landed on the member search page."
+      }
+    },
+    {
+      "id": "fill_member_id",
+      "description": "Enter the member ID in the search form's Member ID or name field.",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          { "kind": "role", "role": "textbox", "accessibleName": "Member ID or name" },
+          { "kind": "css", "selector": "input[name=\"query\"]" },
+          { "kind": "xpath", "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr/td[1]/label/input" }
+        ],
+        "rationale": "role+name unique on the search page (verified live: getByRole('textbox',{name:'Member ID or name',exact:true}).count()===1); css via [name=query] as the next tier; xpath as structural last resort."
+      },
+      "paramRef": "member_id",
+      "risk": "safe",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "click_search_submit",
+      "description": "Click the search form's submit control (an <input type=\"image\" src=\"go.gif\"> with no alt attribute).",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          { "kind": "css", "selector": "input[type=\"image\"]" },
+          { "kind": "xpath", "selector": "//input[@type='image']" }
+        ],
+        "rationale": "DELIBERATELY OMITS A role TIER, even though one would technically resolve. Step 0 probing (see src/perception/snapshot.ts's header comment) found that Chromium synthesizes a default accessible name of \"Submit\" for this alt-less <input type=\"image\">, so getByRole('button',{name:'Submit',exact:true}).count() is genuinely 1 on the live app — the SPEC's premise that this control \"has no accessible name\" does not hold for this installed browser. We exclude the role tier here anyway, as an explicit authorial choice, because (a) that name is a browser/locale-dependent implicit default, not anything the page itself declares — fragile and non-portable across browsers/engines/locales, unlike every OTHER role tier in this artifact which is grounded in real HTML (a <label>-wrapped input's own accessible name); and (b) this is precisely the control the mock app's markup was built to exercise a non-role fallback tier for (SPEC §12), so the artifact should demonstrate that mechanism genuinely resolving and clicking via css, not accidentally sidestep it because of an incidental browser default. css `input[type=\"image\"]` is verified live: count()===1 on the search page, and clicking through it genuinely submits the search. xpath is the structural fallback. NOTE for REPORT: a real discovery-run recorder using enrich.ts's literal, unmodified algorithm (uniqueness-check only, no meaningfulness filter) WOULD include the role tier here, since it authentically satisfies the tier-1 check — see enrich.ts's own header comment for the same caveat, documented there rather than silently patched."
+      },
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "click_member_result_link",
+      "description": "Click the single search-result row's link through to the member detail page. Assumes an exact numeric member_id search, which data.ts's searchMembers() guarantees returns at most one row (member_not_found is detected before this step is attempted if the search came back empty — see this capability's outcomes).",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          { "kind": "css", "selector": "a[href^=\"/member/\"]" },
+          { "kind": "xpath", "selector": "//a[starts-with(@href,'/member/')]" }
+        ],
+        "rationale": "No role+name tier: the link's accessible name is the member's own name, which is unknown ahead of time for an arbitrary member_id param (the whole point of this step is to reach a page that reveals it), so a fixed accessibleName can't be recorded generically. An earlier draft used `table.r a`, which turned out (caught by a real replay run, not hypothesized) to ALSO match the \"New search\" link on the member-not-found page (src/mockapp/pages/memberNotFound.ts wraps it in the same generic <table class=\"r\">), causing a wrong-element click instead of a clean member_not_found business-outcome exit. `a[href^=\"/member/\"]` is specific to an actual member-detail link (member_not_found's only link points to /members/search, which does not match this prefix) and is verified live: count()===1 for a real member id, count()===0 on the not-found page."
+      },
+      "risk": "reversible",
+      "timeoutMs": 5000,
+      "checkpoint": {
+        "kind": "url_matches",
+        "expectedUrlPattern": "/member/\\d+$",
+        "description": "Landed on a member detail page."
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "member_not_found",
+      "classification": "business_outcome",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "No member found"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "No member found for the given search.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "permission_denied",
+      "classification": "business_outcome",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Permission denied"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "Permission denied: you are not authorized to view this member's account.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "session_notice_dialog",
+      "classification": "recoverable",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Session notice"
+      },
+      "recoveryAction": "dismiss",
+      "recoveryTarget": {
+        "strategyChain": [
+          { "kind": "role", "role": "button", "accessibleName": "OK" },
+          { "kind": "text_anchor", "text": "OK" }
+        ]
+      },
+      "maxRetries": 0,
+      "messageTemplate": "A session notice interstitial appeared and was dismissed.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "application_error",
+      "classification": "hard_failure",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Application error"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "The application returned a hard error.",
+      "provenance": "seeded"
+    }
+  ],
+  "successCheckpoint": {
+    "kind": "text_matches",
+    "expectedText": "Savings balance",
+    "description": "The member detail page has loaded with the Savings balance row visible."
+  },
+  "createdFromRunId": "hand-written",
+  "createdAt": "2026-09-19T16:29:57.000Z",
+  "tenantOverrides": {}
+}
