@@ -78,6 +78,29 @@ export const defaultFingerprintFn: FingerprintFn = (observation) =>
 // Public entry point
 // ---------------------------------------------------------------------------------------
 
+/**
+ * `executeCapability`'s optional integration points, added incrementally across Tasks 5, 8,
+ * and 9 under a strict backward-compatibility rule: every field here defaults to a no-op, and
+ * none may change `ReplayResult` or control flow when omitted. This comment is the one place
+ * that describes how they relate to each other and roughly when each fires during a run,
+ * since each field's own doc comment (below) only describes itself in isolation:
+ *
+ *   - `hooks.onEscalationNeeded` (Task 5/8) fires MID-STEP, before that step's `StepTrace`
+ *     exists — it can block indefinitely awaiting a real human (via Task 8's `session.ts`),
+ *     and its outcome ("resumed"/"aborted") decides whether the step is retried once or the
+ *     run ends with `status: "escalated"`.
+ *   - `onStepTrace` (Task 9) fires AFTER a step's `StepTrace` is finalized — either on that
+ *     step's normal success, or on a checkpoint-failure exit right before `finish()` returns.
+ *     It never fires for a step that ended via `onEscalationNeeded` resolving "aborted" (that
+ *     path returns before any `StepTrace` is built) or for whole-run failures that happen
+ *     before any step even starts (fingerprint mismatch) — callers needing evidence for those
+ *     cases handle them separately (see `cli/replay.ts`'s run-level fallback capture, and
+ *     `session.ts`'s own intervention screenshot for the escalated case).
+ *   - `logger` (Task 4/5) is written to opportunistically throughout the run (fingerprint
+ *     checks, step completion, recovery attempts) independent of the two hooks above — it is
+ *     the lowest-level, always-on record; the hooks exist for richer, point-in-time capture
+ *     (a live browser handoff; a screenshot) that a plain log line can't provide.
+ */
 export interface ExecutorOptions {
   runId: string;
   fingerprintFn?: FingerprintFn;
