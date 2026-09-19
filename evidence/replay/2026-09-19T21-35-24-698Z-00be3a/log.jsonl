@@ -1,0 +1,6 @@
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","event":"shared_session_launched","cdpEndpoint":"ws://127.0.0.1:9222/devtools/browser/350eb4f4-c250-4609-a19e-0c4ed02817b3"}
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_username","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_password","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_login_submit","resolvedTier":0,"resolvedKind":"role","checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"navigate_to_search","resolvedTier":null,"resolvedKind":null,"checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-24-698Z-00be3a","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_member_id","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}

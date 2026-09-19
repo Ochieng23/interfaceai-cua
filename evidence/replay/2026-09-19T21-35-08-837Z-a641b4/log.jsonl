@@ -1,0 +1,8 @@
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","event":"shared_session_launched","cdpEndpoint":"ws://127.0.0.1:9222/devtools/browser/c87ad951-5824-499b-a81f-0ca1c19e6812"}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_username","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_password","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_login_submit","resolvedTier":0,"resolvedKind":"role","checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"navigate_to_search","resolvedTier":null,"resolvedKind":null,"checkpointPassed":true,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"fill_member_id","resolvedTier":0,"resolvedKind":"role","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_search_submit","resolvedTier":0,"resolvedKind":"css","checkpointPassed":null,"resolvedByHuman":false}
+{"runId":"2026-09-19T21-35-08-837Z-a641b4","capabilityId":"lookup_member_balance","event":"step_complete","stepId":"click_member_result_link","resolvedTier":0,"resolvedKind":"css","checkpointPassed":true,"resolvedByHuman":false}

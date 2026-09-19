@@ -1,0 +1,23 @@
+{
+  "capabilityId": "lookup_member_balance",
+  "capabilityVersion": "1.0.0",
+  "runId": "2026-09-19T21-37-44-583Z-af5cb2",
+  "outputs": {},
+  "recoveriesApplied": [
+    "fingerprint_mismatch_overridden"
+  ],
+  "stepTraces": [],
+  "evidencePaths": [
+    "log.jsonl",
+    "screenshots/001-failure.png",
+    "snapshot-fill_username.txt",
+    "result.json"
+  ],
+  "startedAt": "2026-09-19T21:37:45.486Z",
+  "finishedAt": "2026-09-19T21:37:45.784Z",
+  "status": "failure",
+  "failureClass": "unknown_condition",
+  "failedStepId": "fill_username",
+  "outcomeName": "application_error",
+  "outcomeMessage": "The application returned a hard error."
+}

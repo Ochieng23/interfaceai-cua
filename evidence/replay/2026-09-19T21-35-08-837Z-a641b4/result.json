@@ -1,0 +1,69 @@
+{
+  "capabilityId": "lookup_member_balance",
+  "capabilityVersion": "1.0.0",
+  "runId": "2026-09-19T21-35-08-837Z-a641b4",
+  "outputs": {
+    "savings_balance": "4,200.00"
+  },
+  "recoveriesApplied": [],
+  "stepTraces": [
+    {
+      "stepId": "fill_username",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 443,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "fill_password",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 149,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "click_login_submit",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 1399,
+      "checkpointPassed": true
+    },
+    {
+      "stepId": "navigate_to_search",
+      "resolvedTier": null,
+      "resolvedKind": null,
+      "durationMs": 1145,
+      "checkpointPassed": true
+    },
+    {
+      "stepId": "fill_member_id",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 282,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "click_search_submit",
+      "resolvedTier": 0,
+      "resolvedKind": "css",
+      "durationMs": 910,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "click_member_result_link",
+      "resolvedTier": 0,
+      "resolvedKind": "css",
+      "durationMs": 1068,
+      "checkpointPassed": true
+    }
+  ],
+  "evidencePaths": [
+    "log.jsonl",
+    "screenshots/003-click_login_submit.png",
+    "screenshots/006-click_search_submit.png",
+    "result.json"
+  ],
+  "startedAt": "2026-09-19T21:35:09.039Z",
+  "finishedAt": "2026-09-19T21:35:15.927Z",
+  "status": "success"
+}

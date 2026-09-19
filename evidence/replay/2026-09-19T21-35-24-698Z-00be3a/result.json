@@ -1,0 +1,54 @@
+{
+  "capabilityId": "lookup_member_balance",
+  "capabilityVersion": "1.0.0",
+  "runId": "2026-09-19T21-35-24-698Z-00be3a",
+  "outputs": {},
+  "recoveriesApplied": [],
+  "stepTraces": [
+    {
+      "stepId": "fill_username",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 357,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "fill_password",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 330,
+      "checkpointPassed": null
+    },
+    {
+      "stepId": "click_login_submit",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 1390,
+      "checkpointPassed": true
+    },
+    {
+      "stepId": "navigate_to_search",
+      "resolvedTier": null,
+      "resolvedKind": null,
+      "durationMs": 1033,
+      "checkpointPassed": true
+    },
+    {
+      "stepId": "fill_member_id",
+      "resolvedTier": 0,
+      "resolvedKind": "role",
+      "durationMs": 230,
+      "checkpointPassed": null
+    }
+  ],
+  "evidencePaths": [
+    "log.jsonl",
+    "screenshots/003-click_login_submit.png",
+    "result.json"
+  ],
+  "startedAt": "2026-09-19T21:35:24.914Z",
+  "finishedAt": "2026-09-19T21:35:30.816Z",
+  "status": "business_outcome",
+  "outcomeName": "member_not_found",
+  "outcomeMessage": "No member found for the given search."
+}

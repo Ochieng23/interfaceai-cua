@@ -1,0 +1,8 @@
+URL: http://localhost:4173/login
+TITLE: CU Console — First Federal CU
+INTERACTIVE ELEMENTS:
+(none)
+
+STATIC TEXT:
+Application error
+Application error. Something went wrong while processing your request.
