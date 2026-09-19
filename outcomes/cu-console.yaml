@@ -1,0 +1,112 @@
+# Seeded outcome catalog for the "cu-console" mock app family (CU Console, tenants A/B).
+#
+# This is data consumed by a later task's recorder/replay code (SPEC §7: "merges seeded
+# outcomes from outcomes/<targetApp>.yaml"). Shape matches `OutcomeSpec` in
+# src/schema/capability.ts. Every `expectedText` below is a literal substring of what the
+# corresponding src/mockapp/pages/*.ts builder actually renders — see the comment on each
+# entry for which page.
+#
+# provenance is "seeded" for every entry here: these were known ahead of a discovery run,
+# as opposed to outcomes a discovery session finds live and were not in this catalog
+# ("discovered").
+
+- name: member_not_found
+  classification: business_outcome
+  # Rendered by src/mockapp/pages/memberNotFound.ts, used both for a search miss and for
+  # GET /member/:id on an id that isn't in data.ts.
+  detection:
+    kind: text_matches
+    expectedText: "No member found"
+  recoveryAction: none
+  maxRetries: 0
+  messageTemplate: "No member found for the given search."
+  provenance: seeded
+
+- name: permission_denied
+  classification: business_outcome
+  # Rendered by src/mockapp/pages/permissionDenied.ts for the restricted member (10007).
+  detection:
+    kind: text_matches
+    expectedText: "Permission denied"
+  recoveryAction: none
+  maxRetries: 0
+  messageTemplate: "Permission denied: you are not authorized to view this member's account."
+  provenance: seeded
+
+- name: validation_error_min_deposit
+  classification: business_outcome
+  # Rendered by src/mockapp/pages/validationError.ts when the sub-account initial deposit
+  # is below data.ts's MIN_DEPOSIT (25.00).
+  detection:
+    kind: text_matches
+    expectedText: "Validation error: the initial deposit must be at least 25.00."
+  recoveryAction: none
+  maxRetries: 0
+  messageTemplate: "Initial deposit is below the $25.00 minimum."
+  provenance: seeded
+
+- name: session_notice_dialog
+  classification: recoverable
+  # Rendered by src/mockapp/pages/sessionNotice.ts when inject.ts fires mode=dialog.
+  detection:
+    kind: text_matches
+    expectedText: "Session notice"
+  recoveryAction: dismiss
+  recoveryTarget:
+    strategyChain:
+      - kind: role
+        role: button
+        accessibleName: "OK"
+      - kind: text_anchor
+        text: "OK"
+  maxRetries: 0
+  messageTemplate: "A session notice interstitial appeared and was dismissed."
+  provenance: seeded
+
+- name: slow_load
+  classification: recoverable
+  # A slow load (inject.ts mode=slow delays the response 6s) has no distinctive page text
+  # of its own — it's just the normal next page arriving late. Detection is a generic
+  # element_visible checkpoint on content that's present on the shell page (the nav "Home"
+  # link), which is what a slow GET / eventually resolves to in the demo path; a real
+  # replay would substitute whatever page the step actually targets. The recovery is to
+  # wait for the (longer) timeout and retry once.
+  detection:
+    kind: element_visible
+    target:
+      strategyChain:
+        - kind: text_anchor
+          text: "Home"
+  recoveryAction: wait_and_retry
+  maxRetries: 2
+  messageTemplate: "Response was slow to load; waited and retried."
+  provenance: seeded
+
+- name: application_error
+  classification: hard_failure
+  # Rendered by src/mockapp/pages/applicationError.ts (HTTP 500) when inject.ts fires
+  # mode=error.
+  detection:
+    kind: text_matches
+    expectedText: "Application error"
+  recoveryAction: none
+  maxRetries: 0
+  messageTemplate: "The application returned a hard error."
+  provenance: seeded
+
+# Cut decision: classified hard_failure, not recoverable-with-relogin — OutcomeSpec.recoveryAction
+# has no "jump to step" primitive; the correct recovery is a fresh replay run, not mid-run
+# re-login. See REPORT.md.
+- name: session_expired
+  classification: hard_failure
+  # inject.ts mode=expire clears the session server-side; the next request that needs one
+  # (requireSession in server.ts) 303-redirects to the login route. Detection matches that
+  # redirect's destination rather than page text, since no page body is rendered — the
+  # pattern matches both tenant A's "/login" and tenant B's "/portal/login".
+  detection:
+    kind: url_matches
+    expectedUrlPattern: "/login$"
+  recoveryAction: none
+  maxRetries: 0
+  messageTemplate: "Session expired mid-run; a fresh replay invocation is required, not mid-run re-login."
+  provenance: seeded
