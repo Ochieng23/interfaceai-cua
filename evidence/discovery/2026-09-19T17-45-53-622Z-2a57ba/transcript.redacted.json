@@ -1,0 +1,161 @@
+{
+  "runId": "2026-09-19T17-45-53-622Z-2a57ba",
+  "goal": "Log in, look up member {member_id}, and read their current savings balance",
+  "target": "http://localhost:4173",
+  "name": "lookup_member_balance_discovered",
+  "model": "claude-sonnet-4-6",
+  "status": "goal_complete",
+  "turns": [
+    {
+      "turnIndex": 1,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 4665,
+        "outputTokens": 86
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/001-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e0",
+          "text": "{{secret:username}}"
+        },
+        "id": "toolu_01T1Sdk4UmCUp97XiNiv1EbT"
+      }
+    },
+    {
+      "turnIndex": 2,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 6367,
+        "outputTokens": 83
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/002-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e1",
+          "text": "{{secret:password}}"
+        },
+        "id": "toolu_01MupQU4qeqq34n8C2ggyQy8"
+      }
+    },
+    {
+      "turnIndex": 3,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 8066,
+        "outputTokens": 62
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/003-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e2"
+        },
+        "id": "toolu_01GkrnYvRzhiGMRS1jsuQA6Z"
+      }
+    },
+    {
+      "turnIndex": 4,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 9757,
+        "outputTokens": 88
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/004-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e2",
+          "text": "10001"
+        },
+        "id": "toolu_01JzHdUPiSAAxHsCzmK99sGF"
+      }
+    },
+    {
+      "turnIndex": 5,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 11475,
+        "outputTokens": 68
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: textbox \"Member ID or name\"\ne3: button \"Submit\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember search\nSearch",
+      "screenshotPath": "screenshots/005-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e3"
+        },
+        "id": "toolu_019GJQvTaxSCav52BttZytM2"
+      }
+    },
+    {
+      "turnIndex": 6,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 13190,
+        "outputTokens": 83
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Testy McTestface\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nSearch results\nMember ID\nName\nMember since\n10001\n2015-03-12",
+      "screenshotPath": "screenshots/006-click.png",
+      "toolCall": {
+        "name": "click",
+        "input": {
+          "ref": "e2"
+        },
+        "id": "toolu_01Wby6HsRFNpCVaSXhRfhLY5"
+      }
+    },
+    {
+      "turnIndex": 7,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 14949,
+        "outputTokens": 180
+      },
+      "retried": false,
+      "url": "http://localhost:4173/",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: link \"Home\"\ne1: link \"Log out\"\ne2: link \"Open sub-account\"\ne3: link \"New search\"\n\nSTATIC TEXT:\nCU Console — First Federal CU\nMember detail\nMember ID: 10001\nName: Testy McTestface\nMember since: 2015-03-12\nSavings balance: 4,200.00\nChecking balance: 1,100.00",
+      "screenshotPath": "screenshots/007-goal_complete.png",
+      "toolCall": {
+        "name": "goal_complete",
+        "input": {
+          "checkpoint": {
+            "text": "Savings balance: 4,200.00"
+          },
+          "outputs": {
+            "savings_balance": {
+              "value": "4,200.00"
+            }
+          },
+          "summary": "Successfully logged in, searched for member 10001 (Testy McTestface), and found their current savings balance of 4,200.00."
+        },
+        "id": "toolu_01JkceQEYC4U7sdj1hRcimbn"
+      }
+    }
+  ]
+}

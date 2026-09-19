@@ -1,0 +1,63 @@
+{
+  "runId": "2026-09-19T17-29-07-709Z-c537fb",
+  "goal": "Log in, look up member {member_id}, and read their current savings balance",
+  "target": "http://localhost:4173",
+  "name": "lookup_member_balance_discovered",
+  "model": "claude-sonnet-4-6",
+  "status": "stuck",
+  "terminationReason": "3 consecutive turns with an identical snapshot hash",
+  "turns": [
+    {
+      "turnIndex": 1,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 4458,
+        "outputTokens": 86
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/001-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e0",
+          "text": "{{secret:username}}"
+        },
+        "id": "toolu_012LDtpt7c3h6XwXnbG2Nt44"
+      }
+    },
+    {
+      "turnIndex": 2,
+      "model": "claude-sonnet-4-6",
+      "usage": {
+        "inputTokens": 6160,
+        "outputTokens": 83
+      },
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/002-type_text.png",
+      "toolCall": {
+        "name": "type_text",
+        "input": {
+          "ref": "e1",
+          "text": "{{secret:password}}"
+        },
+        "id": "toolu_01MQrgUNYp7hWN8tyJtY6vdN"
+      }
+    },
+    {
+      "turnIndex": 3,
+      "model": "claude-sonnet-4-6",
+      "retried": false,
+      "url": "http://localhost:4173/login",
+      "title": "CU Console — First Federal CU",
+      "snapshotText": "URL: http://localhost:4173/login\nTITLE: CU Console — First Federal CU\nINTERACTIVE ELEMENTS:\ne0: textbox \"Username\"\ne1: textbox \"Password\"\ne2: button \"Log in\"\n\nSTATIC TEXT:\nCU Console — First Federal CU",
+      "screenshotPath": "screenshots/003-malformed.png",
+      "toolCall": null
+    }
+  ]
+}

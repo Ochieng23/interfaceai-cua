@@ -1,0 +1,3 @@
+{"event":"discovery_run_started","runId":"2026-09-19T17-20-18-170Z-210fa0","goal":"Log in, look up member {member_id}, and read their current savings balance","target":"http://localhost:4173","name":"lookup_member_balance_discovered"}
+{"event":"discovery_turn","runId":"2026-09-19T17-20-18-170Z-210fa0","turnIndex":1,"url":"http://localhost:4173/login","toolCall":{"name":"type_text","input":{"ref":"e0","text":"{{secret:username}}"}},"usage":{"inputTokens":4458,"outputTokens":86},"model":"claude-sonnet-4-6","retried":false,"screenshotPath":"screenshots/001-type_text.png"}
+{"event":"discovery_run_finished","runId":"2026-09-19T17-20-18-170Z-210fa0","status":"stuck","terminationReason":"locator_unresolved: ref \"e0\" no longer resolves uniquely (count=0)","turnCount":1}

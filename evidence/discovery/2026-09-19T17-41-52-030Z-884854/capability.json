@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "1.1",
+  "id": "lookup_member_balance_discovered",
+  "name": "lookup_member_balance_discovered",
+  "version": "1.0.0",
+  "status": "draft",
+  "description": "Log in, look up member {member_id}, and read their current savings balance — discovered via a genuine LLM-driven discovery run. Outcome summary: Logged in successfully, searched for member 10001 (Testy McTestface), and found their current savings balance is 4,200.00.",
+  "targetApp": "http://localhost:4173",
+  "entryPoint": "http://localhost:4173/login",
+  "allowlistScope": [
+    "/",
+    "/login",
+    "/member/:member_id"
+  ],
+  "appFingerprint": "33565b684b22412149c9aaaeac294f3d5dc8e7788cd6a7d4daac8b28ef36d615",
+  "inputParams": [
+    {
+      "name": "username",
+      "type": "secret",
+      "required": true,
+      "description": "CU Console login username, resolved from the DEMO_USER env var.",
+      "pii": false
+    },
+    {
+      "name": "password",
+      "type": "secret",
+      "required": true,
+      "description": "CU Console login password, resolved from the DEMO_PASS env var.",
+      "pii": false
+    },
+    {
+      "name": "member_id",
+      "type": "string",
+      "required": true,
+      "description": "Bound parameter \"member_id\" for this discovery run.",
+      "pii": false,
+      "example": "10001"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "savings_balance",
+      "type": "string",
+      "description": "Value read from e0 at goal completion (candidate output \"savings_balance\").",
+      "source": {
+        "strategyChain": [
+          {
+            "kind": "role",
+            "role": "link",
+            "accessibleName": "Open sub-account"
+          },
+          {
+            "kind": "css",
+            "selector": "p:nth-of-type(1) > a"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/p[1]/a"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 0,
+              "y": 197.34375,
+              "width": 106.234375,
+              "height": 15
+            },
+            "nearbyText": "Open sub-account"
+          }
+        ],
+        "rationale": "role+name unique on page (role=\"link\" name=\"Open sub-account\"); css added as a generated shortest-unique structural path; xpath absolute path added as structural fallback; text_anchor dropped (no nearby label/header/cell text found); visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "extraction": "text",
+      "pii": false
+    }
+  ],
+  "steps": [
+    {
+      "id": "s1",
+      "description": "Enter text into \"Username\".",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "role",
+            "role": "textbox",
+            "accessibleName": "Username"
+          },
+          {
+            "kind": "css",
+            "selector": "input[name=\"username\"]"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[1]/td/label/input"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "Username",
+            "nearbyText": "Username"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 81.578125,
+              "y": 83.8125,
+              "width": 185,
+              "height": 21
+            },
+            "nearbyText": "Username"
+          }
+        ],
+        "rationale": "role+name unique on page (role=\"textbox\" name=\"Username\"); css added via [name=\"username\"] (name may be tenant-branded elsewhere); xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"Username\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "paramRef": "username",
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s2",
+      "description": "Enter text into \"Password\".",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "role",
+            "role": "textbox",
+            "accessibleName": "Password"
+          },
+          {
+            "kind": "css",
+            "selector": "input[name=\"password\"]"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[2]/td/label/input"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "Password",
+            "nearbyText": "Password"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 78.703125,
+              "y": 113.8125,
+              "width": 185,
+              "height": 21
+            },
+            "nearbyText": "Password"
+          }
+        ],
+        "rationale": "role+name unique on page (role=\"textbox\" name=\"Password\"); css added via [name=\"password\"] (name may be tenant-branded elsewhere); xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"Password\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "paramRef": "password",
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s3",
+      "description": "Click \"Log in\".",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "role",
+            "role": "button",
+            "accessibleName": "Log in"
+          },
+          {
+            "kind": "css",
+            "selector": "td > input"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr[3]/td/input"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "Username",
+            "nearbyText": "Username"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 18,
+              "y": 143.8125,
+              "width": 52.328125,
+              "height": 21
+            }
+          }
+        ],
+        "rationale": "role+name unique on page (role=\"button\" name=\"Log in\"); css added as a generated shortest-unique structural path; xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"Username\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s4",
+      "description": "Enter text into \"Member ID or name\".",
+      "action": "fill",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "css",
+            "selector": "body > table:nth-of-type(2) > tbody > tr > td > form > table > tbody > tr > td:nth-of-type(1) > label > input"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr/td[1]/label/input"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "Member ID or name",
+            "nearbyText": "Member ID or name"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 143.203125,
+              "y": 161.15625,
+              "width": 185,
+              "height": 21
+            },
+            "nearbyText": "Member ID or name"
+          }
+        ],
+        "rationale": "role tier dropped (role=\"textbox\" name=\"Member ID or name\" matched 0 elements, not 1); css added as a full structural path (no shorter unique suffix found); xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"Member ID or name\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "paramRef": "member_id",
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s5",
+      "description": "Click \"Submit\".",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "css",
+            "selector": "body > table:nth-of-type(2) > tbody > tr > td > form > table > tbody > tr > td:nth-of-type(3) > input"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr/td/form/table/tbody/tr/td[3]/input"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "Search",
+            "nearbyText": "Search"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 403.40625,
+              "y": 163.65625,
+              "width": 57.484375,
+              "height": 16
+            }
+          }
+        ],
+        "rationale": "role tier dropped (role=\"button\" name=\"Submit\" matched 0 elements, not 1); css added as a full structural path (no shorter unique suffix found); xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"Search\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "risk": "irreversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s6",
+      "description": "Click \"Testy McTestface\".",
+      "action": "click",
+      "target": {
+        "strategyChain": [
+          {
+            "kind": "css",
+            "selector": "body > table:nth-of-type(2) > tbody > tr:nth-of-type(2) > td:nth-of-type(2) > a"
+          },
+          {
+            "kind": "xpath",
+            "selector": "/html/body/table[2]/tbody/tr[2]/td[2]/a"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "10001",
+            "nearbyText": "10001"
+          },
+          {
+            "kind": "visual_anchor",
+            "bbox": {
+              "x": 98.46875,
+              "y": 180.15625,
+              "width": 99.703125,
+              "height": 15
+            },
+            "nearbyText": "Testy McTestface"
+          }
+        ],
+        "rationale": "role tier dropped (role=\"link\" name=\"Testy McTestface\" matched 0 elements, not 1); css added as a full structural path (no shorter unique suffix found); xpath absolute path added as structural fallback; text_anchor from nearby label/cell text \"10001\"; visual_anchor added as the last-resort bounding-box fallback"
+      },
+      "risk": "reversible",
+      "timeoutMs": 5000
+    },
+    {
+      "id": "s7",
+      "description": "Navigate to http://localhost:4173/member/10001.",
+      "action": "navigate",
+      "valueLiteral": "http://localhost:4173/member/:member_id",
+      "risk": "reversible",
+      "timeoutMs": 5000
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "member_not_found",
+      "classification": "business_outcome",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "No member found"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "No member found for the given search.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "permission_denied",
+      "classification": "business_outcome",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Permission denied"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "Permission denied: you are not authorized to view this member's account.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "validation_error_min_deposit",
+      "classification": "business_outcome",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Validation error: the initial deposit must be at least 25.00."
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "Initial deposit is below the $25.00 minimum.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "session_notice_dialog",
+      "classification": "recoverable",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Session notice"
+      },
+      "recoveryAction": "dismiss",
+      "recoveryTarget": {
+        "strategyChain": [
+          {
+            "kind": "role",
+            "role": "button",
+            "accessibleName": "OK"
+          },
+          {
+            "kind": "text_anchor",
+            "text": "OK"
+          }
+        ]
+      },
+      "maxRetries": 0,
+      "messageTemplate": "A session notice interstitial appeared and was dismissed.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "slow_load",
+      "classification": "recoverable",
+      "detection": {
+        "kind": "element_visible",
+        "target": {
+          "strategyChain": [
+            {
+              "kind": "text_anchor",
+              "text": "Home"
+            }
+          ]
+        }
+      },
+      "recoveryAction": "wait_and_retry",
+      "maxRetries": 2,
+      "messageTemplate": "Response was slow to load; waited and retried.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "application_error",
+      "classification": "hard_failure",
+      "detection": {
+        "kind": "text_matches",
+        "expectedText": "Application error"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "The application returned a hard error.",
+      "provenance": "seeded"
+    },
+    {
+      "name": "session_expired",
+      "classification": "hard_failure",
+      "detection": {
+        "kind": "url_matches",
+        "expectedUrlPattern": "/login$"
+      },
+      "recoveryAction": "none",
+      "maxRetries": 0,
+      "messageTemplate": "Session expired mid-run; a fresh replay invocation is required, not mid-run re-login.",
+      "provenance": "seeded"
+    }
+  ],
+  "successCheckpoint": {
+    "kind": "text_matches",
+    "expectedText": "Savings balance: 4,200.00",
+    "description": "Logged in successfully, searched for member 10001 (Testy McTestface), and found their current savings balance is 4,200.00."
+  },
+  "createdFromRunId": "2026-09-19T17-41-52-030Z-884854",
+  "createdAt": "2026-09-19T17:42:37.477Z",
+  "tenantOverrides": {}
+}
