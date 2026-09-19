@@ -1,0 +1,36 @@
+{
+  "name": "interfaceai-cua",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "//": "yaml: required to parse policy.yaml and outcomes/*.yaml — not in the original stack table but necessary; only dep added beyond spec §1",
+  "//engines": "commander@15 and vitest@5 both declare engines.node >=22.12, above SPEC.md §1's stated 'Node >=20' floor; documented here rather than pinning older majors, since Node 22 LTS is what this project is actually developed/graded against",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "mock-app":   "tsx src/mockapp/server.ts",
+    "discover":   "tsx src/cli/discover.ts",
+    "replay":     "tsx src/cli/replay.ts",
+    "operator":   "tsx src/cli/operator.ts",
+    "capabilities": "tsx src/cli/capabilities.ts",
+    "test":       "vitest run",
+    "typecheck":  "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.127.0",
+    "playwright": "^1.63.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2",
+    "express": "^4.22.3",
+    "commander": "^15.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsx": "^4.23.13",
+    "vitest": "^5.0.1",
+    "@types/node": "^22.20.4",
+    "@types/express": "^4.17.25"
+  }
+}

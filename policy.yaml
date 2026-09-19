@@ -1,0 +1,38 @@
+allowlist:
+  origins:
+    - "http://localhost:4173"
+  routes:
+    - "/"
+    - "/login"
+    - "/members/**"
+    - "/member/**"
+    - "/portal/**"
+  actions:
+    - "click"
+    - "fill"
+    - "select_option"
+    - "navigate"
+    - "wait_for"
+    - "extract"
+
+risk:
+  irreversible_when:
+    button_text_matches:
+      - "submit"
+      - "confirm"
+      - "open account"
+      - "transfer"
+      - "delete"
+      - "close"
+    method_is:
+      - "POST"
+  irreversible_policy: "escalate"
+
+redaction:
+  patterns:
+    - name: "ssn"
+      regex: "\\b\\d{3}-\\d{2}-\\d{4}\\b"
+    - name: "acct"
+      regex: "\\b\\d{9,16}\\b"
+    - name: "email"
+      regex: "[\\w.+-]+@[\\w-]+\\.[\\w.]+"
