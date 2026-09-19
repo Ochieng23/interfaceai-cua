@@ -85,14 +85,29 @@ export interface ExecutorOptions {
   logger?: EvidenceLogger;
   /**
    * Optional tenant id (mirrors the CLI's `--tenant` flag, SPEC §8). `tenantOverrides`
-   * step/param merging happens in the CALLER (a later task's CLI) before the capability
-   * ever reaches this function — by the time we see `capability`, its steps already
-   * reflect the merge. This field is consulted ONLY for the fingerprint-mismatch branch:
-   * "if tenant override exists: proceed with it, log fingerprint_mismatch_overridden" —
-   * i.e. if the capability declares an override entry for this tenant at all, a fingerprint
-   * mismatch is treated as an expected tenant-branding difference rather than a failure.
+   * step/param merging happens in the CALLER (Task 9's `cli/replay.ts`) before the
+   * capability ever reaches this function — by the time we see `capability`, its steps
+   * already reflect the merge. This field is consulted ONLY for the fingerprint-mismatch
+   * branch: "if tenant override exists: proceed with it, log fingerprint_mismatch_overridden"
+   * — i.e. if the capability declares an override entry for this tenant at all, a
+   * fingerprint mismatch is treated as an expected tenant-branding difference rather than a
+   * failure.
    */
   tenant?: string;
+  /**
+   * Task 9 evidence hook (SPEC §11: screenshots "every N steps + always on failure",
+   * `snapshot-<step>.txt` on failure). Added with the SAME discipline as Task 8's
+   * `locator_unresolved` change: optional, defaults to a no-op, never alters control flow
+   * or `ReplayResult`, and is invoked from exactly two places in the step loop below — once
+   * per step's SUCCESS path (right after its `StepTrace` is pushed) and once on a
+   * checkpoint-FAILURE exit (with a synthesized `StepTrace` carrying
+   * `checkpointPassed: false`, built right before `finish()` returns). Both call sites reuse
+   * an `Observation` already fetched earlier in the same iteration rather than calling
+   * `surface.observe()` again. Errors thrown by the hook are swallowed (best-effort,
+   * evidence-writing must never break a replay run) — same pattern as the screenshot/snapshot
+   * writes in `src/escalation/session.ts`'s `createEscalationHook`.
+   */
+  onStepTrace?: (trace: StepTrace, observation: Observation) => Promise<void> | void;
 }
 
 export async function executeCapability(
@@ -145,6 +160,17 @@ export async function executeCapability(
 
   function log(entry: Record<string, unknown>): void {
     logger?.log({ runId: options.runId, capabilityId: capability.id, ...entry });
+  }
+
+  /** Best-effort invocation of `options.onStepTrace` — see its doc comment on
+   * `ExecutorOptions` for the backward-compatibility contract. Never throws. */
+  async function emitStepTrace(trace: StepTrace, observation: Observation): Promise<void> {
+    if (!options.onStepTrace) return;
+    try {
+      await options.onStepTrace(trace, observation);
+    } catch {
+      // Evidence capture must never break the run itself.
+    }
   }
 
   function renderTemplate(template: string): string {
@@ -653,9 +679,14 @@ export async function executeCapability(
       return postHandled.result;
     }
 
+    // Tracks whichever Observation is freshest for this step, for `emitStepTrace` below to
+    // reuse rather than calling `surface.observe()` again.
+    let lastObs: Observation = postObs;
+
     // CHECKPOINT — never proceed past a failed checkpoint.
     if (step.checkpoint) {
       const finalObs = await surface.observe();
+      lastObs = finalObs;
       const passed = await evaluateCheckpoint(step.checkpoint, finalObs, surface);
       checkpointPassed = passed;
       if (!passed) {
@@ -666,6 +697,14 @@ export async function executeCapability(
         }
         // "recovered" or "none": no outcome explains the failed checkpoint — fail here and
         // do NOT proceed to the next step.
+        const failTrace: StepTrace = {
+          stepId: step.id,
+          resolvedTier,
+          resolvedKind,
+          durationMs: Date.now() - stepStart,
+          checkpointPassed: false,
+        };
+        await emitStepTrace(failTrace, finalObs);
         return finish({
           status: "failure",
           failureClass: "checkpoint_failed",
@@ -676,13 +715,14 @@ export async function executeCapability(
       }
     }
 
-    stepTraces.push({
+    const trace: StepTrace = {
       stepId: step.id,
       resolvedTier,
       resolvedKind,
       durationMs: Date.now() - stepStart,
       checkpointPassed,
-    });
+    };
+    stepTraces.push(trace);
     log({
       event: "step_complete",
       stepId: step.id,
@@ -691,6 +731,7 @@ export async function executeCapability(
       checkpointPassed,
       resolvedByHuman: actOutcome.kind === "resolved_by_human",
     });
+    await emitStepTrace(trace, lastObs);
   }
 
   // ---- outputs + successCheckpoint --------------------------------------------------------

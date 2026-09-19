@@ -1,6 +1,12 @@
 allowlist:
   origins:
     - "http://localhost:4173"
+    # Tenant B (SPEC §12) mock-app instance, run with TENANT=b PORT=4174 — a separate
+    # process/port from tenant A's default 4173 (see .env's PORT var and
+    # src/replay/tenantOverride.ts). Routes below already listed "/portal/**" before this
+    # origin was added; without this origin GuardedSurface's isUrlAllowed (src/guardrails/
+    # policy.ts) rejects every navigate to it regardless of the route allowlist.
+    - "http://localhost:4174"
   routes:
     - "/"
     - "/login"

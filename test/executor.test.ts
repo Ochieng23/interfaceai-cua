@@ -5,7 +5,8 @@ import { GuardedSurface } from "../src/surface/GuardedSurface";
 import { loadPolicy, clearPolicyCache, type Policy } from "../src/guardrails/policy";
 import { clearRegistry } from "../src/guardrails/redact";
 import { Capability, type OutcomeSpec, type Step, type LocatorSpec } from "../src/schema/capability";
-import type { Surface, SurfaceAction, Extraction } from "../src/surface/Surface";
+import type { StepTrace } from "../src/schema/result";
+import type { Surface, SurfaceAction, Extraction, Observation } from "../src/surface/Surface";
 import { executeCapability, type ExecutorHooks, type EscalationInfo, type EscalationOutcome } from "../src/replay/executor";
 
 const POLICY_PATH = new URL("../policy.yaml", import.meta.url).pathname;
@@ -610,5 +611,40 @@ describe("executeCapability", () => {
 
     expect(result.status).toBe("success");
     expect(result.recoveriesApplied).toContain("fingerprint_mismatch_overridden");
+  });
+
+  it("Task 9: onStepTrace fires once per successful step with the finalized StepTrace and the current Observation", async () => {
+    const memberState: FakePageState = {
+      url: "http://localhost:4173/member/10001",
+      title: "Member",
+      snapshotText: "e0: button 'Extract'",
+      resolves: () => true,
+    };
+    const fake = new FakeSurface([ENTRY_STUB, memberState]);
+
+    const step: Step = {
+      id: "s1",
+      description: "Click extract",
+      action: "click",
+      target: { strategyChain: [{ kind: "role", role: "button", accessibleName: "Extract" }] },
+      risk: "reversible",
+      timeoutMs: 1000,
+    };
+    const capability = baseCapability({ steps: [step] });
+
+    const seen: Array<{ trace: StepTrace; observation: Observation }> = [];
+    const result = await executeCapability(capability, {}, fake, {
+      runId: "run-onsteptrace",
+      onStepTrace: (trace, observation) => {
+        seen.push({ trace, observation });
+      },
+    });
+
+    expect(result.status).toBe("success");
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.trace.stepId).toBe("s1");
+    expect(seen[0]?.trace.checkpointPassed).toBeNull();
+    expect(seen[0]?.observation.url).toBe(memberState.url);
+    expect(seen[0]?.observation.snapshotText).toBe(memberState.snapshotText);
   });
 });

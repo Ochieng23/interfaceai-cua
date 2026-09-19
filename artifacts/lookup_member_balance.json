@@ -211,7 +211,8 @@
           { "kind": "text_anchor", "text": "OK" }
         ]
       },
-      "maxRetries": 0,
+      "maxRetries": 1,
+      "_maxRetriesNote": "Task 9 fix, verified live: outcomes/cu-console.yaml's seeded maxRetries:0 for this entry (copied verbatim here originally) means applyRecovery (src/replay/outcomes.ts) treats attempt 1 as ALREADY exhausted before ever performing the recoveryAction — 'attemptNumber > outcome.maxRetries' is 1 > 0 on the very first call, so the 'dismiss' click never fires at all. Confirmed by an actual `npm run replay -- --inject dialog --tenant escalation-demo` run: it failed immediately with status:failure/failureClass:unknown_condition and outcomeMessage 'A session notice interstitial appeared and was dismissed' — a message claiming a dismissal that provably never happened (no recoveriesApplied entry, no second act() call). maxRetries:1 is the minimum value that lets 'dismiss' — a single, non-looping action — actually execute once (attempt 1: 1 > 1 is false, so the click runs; a still-present dialog on re-detection would exhaust on attempt 2). Scoped to THIS capability's own copy of the outcome only; outcomes/cu-console.yaml's seed catalog is left untouched since fixing generic recoverable-outcome semantics for maxRetries:0 (e.g. treating 'dismiss' as exempt from the retry-count gate) is a src/replay/outcomes.ts design decision outside this task's scope.",
       "messageTemplate": "A session notice interstitial appeared and was dismissed.",
       "provenance": "seeded"
     },
@@ -236,6 +237,31 @@
   "createdFromRunId": "hand-written",
   "createdAt": "2026-09-19T16:29:57.000Z",
   "tenantOverrides": {
+    "b": {
+      "_comment": "SPEC §12 Tenant B ('Member Portal — Second Federal CU'): route prefix /portal, different title/colors, search button LABEL text 'Find member' instead of 'Search'. Read every src/mockapp/pages/*.ts builder before writing this override, AND actually ran it live against a real TENANT=b PORT=4174 mock-app instance (Task 9) rather than trusting a read-through — that live run is what caught the real bug below; a purely-by-inspection draft of this override was wrong. The search submit's own accessible name is intentionally absent under BOTH tenants (an alt-less <input type=\"image\">, SPEC's one deliberately-broken control) and click_search_submit never references a role/text tier for it anyway (css/xpath only), so THAT locator genuinely doesn't change under tenant B. What DOES genuinely change, confirmed by the live run failing with failureClass locator_unresolved on click_member_result_link before this override existed: src/mockapp/pages/results.ts renders each result row's link as `${cfg.prefix}/member/${id}` — under tenant B that's `/portal/member/10001`, which click_member_result_link's base css/xpath tiers (`a[href^=\"/member/\"]` / `//a[starts-with(@href,'/member/')]`) do NOT match (they require the href to START with `/member/`, and `/portal/member/10001` doesn't). Also hard-codes tenant A's absolute origin+path in two places that need the /portal prefix (and, for this repo's live tenant-B demo instance, a different port — see policy.yaml's allowlist.origins, which now lists both http://localhost:4173 and http://localhost:4174): click_login_submit's post-login checkpoint URL and navigate_to_search's target URL. entryPoint below points at a SECOND mock-app process started with TENANT=b PORT=4174 (npm run mock-app, with those env vars set) — a separate instance from the default tenant-A one on 4173.",
+      "entryPoint": "http://localhost:4174/portal/login",
+      "steps": {
+        "click_login_submit": {
+          "checkpoint": {
+            "kind": "url_matches",
+            "expectedUrlPattern": "^http://localhost:4174/portal/$",
+            "description": "Login succeeded and landed on the CU Console shell page (tenant b)."
+          }
+        },
+        "navigate_to_search": {
+          "valueLiteral": "http://localhost:4174/portal/members/search"
+        },
+        "click_member_result_link": {
+          "target": {
+            "strategyChain": [
+              { "kind": "css", "selector": "a[href^=\"/portal/member/\"]" },
+              { "kind": "xpath", "selector": "//a[starts-with(@href,'/portal/member/')]" }
+            ],
+            "rationale": "Tenant-B override, verified live (member 10001, http://localhost:4174/portal/members/search): the base capability's tier here (`a[href^=\"/member/\"]`) resolves count()===0 under tenant B because results.ts renders the link href as `${cfg.prefix}/member/${id}` = `/portal/member/10001`, which does not start with `/member/`. This css/xpath pair, prefixed with /portal, is count()===1 and genuinely clicks through to the member detail page under tenant B."
+          }
+        }
+      }
+    },
     "escalation-demo": {
       "_comment": "Not a real tenant-branding override. Task 8 live-verification note: cli/replay.ts applies --inject (slow/error/dialog/stuck/expire) as a one-shot cookie BEFORE executeCapability runs, so it is consumed by the capability's OWN entry-point navigate (the very first HTTP request) rather than by a later step. That makes the injected page (e.g. the --inject=stuck interstitial) the ENTRY observation, which fails this capability's declared appFingerprint check before any step ever runs — a Task 6 characteristic outside Task 8's scope to change (Task 8's executor.ts change is intentionally scoped to the locator_unresolved path only). Running with --tenant escalation-demo exercises the executor's ALREADY-BUILT tenant-override escape hatch (see executor.ts: a fingerprint mismatch is proceeded-past, logged as fingerprint_mismatch_overridden, rather than failed, when the run's tenant has a tenantOverrides entry) so the run reaches the real step loop, where the injected stuck page then correctly produces the locator_unresolved escalation this task implements. Used only for Task 8's --inject stuck live demo; harmless for any other run (only affects behavior when --tenant escalation-demo is explicitly passed)."
     }

@@ -5,22 +5,24 @@
  * `src/replay/`, never touches `@anthropic-ai/sdk`.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import { resolve as resolvePath } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join as joinPath, resolve as resolvePath } from "node:path";
 
 import { Command } from "commander";
 import { ZodError } from "zod";
 
 import { computeFingerprint } from "../perception/fingerprint";
 import { executeCapability } from "../replay/executor";
+import { applyTenantOverride, type TenantOverride } from "../replay/tenantOverride";
 import { createRunId, ensureRunDir } from "../evidence/run";
 import { EvidenceLogger } from "../evidence/logger";
 import { loadPolicy } from "../guardrails/policy";
-import { Capability } from "../schema/capability";
+import { Capability, type LocatorSpec } from "../schema/capability";
+import type { ReplayResult } from "../schema/result";
 import { GuardedSurface } from "../surface/GuardedSurface";
 import { PlaywrightSurface } from "../surface/PlaywrightSurface";
 import { createEscalationHook, launchSharedSession, readControl } from "../escalation/session";
-import { registerSecretValue } from "../guardrails/redact";
+import { buildMaskSpecs, redactDeep, registerSecretValue } from "../guardrails/redact";
 
 // Best-effort .env load. Every var this CLI itself reads (DEMO_USER/DEMO_PASS, HEADLESS) has
 // a documented fallback or is optional, so a missing/malformed .env is never fatal here —
@@ -53,8 +55,9 @@ program
   .option("--param <key=value>", "input param, repeatable", collectParam, [] as string[])
   .option(
     "--tenant <name>",
-    "tenant key to run under; tenantOverrides deep-merge is a later task — for now this only " +
-      "affects the fingerprint-mismatch-override check and is otherwise informational",
+    "tenant key to run under; when capability.tenantOverrides[name] exists, it is deep-merged " +
+      "into a copy of the capability (entryPoint + per-step target/valueLiteral/checkpoint " +
+      "overrides, matched by step id — see src/replay/tenantOverride.ts) before the run starts",
   )
   .option("--inject <mode>", "dev-only: sets a failure-injection cookie before the run (slow|error|dialog|stuck|expire|none)")
   .option(
@@ -133,6 +136,30 @@ function makeSecretProvider(): (name: string) => string | undefined {
 }
 
 /**
+ * Builds the `maskSpecs` list (SPEC §11: screenshots must be masked) `Surface.screenshot()`
+ * needs, from whatever this capability itself already flags as PII: a step's `target` when
+ * that step fills a `pii: true` inputParam, and a declared output's `source` when the output
+ * itself is `pii: true`. This is the CLI-level "decide which locators need masking" step
+ * `buildMaskSpecs` (src/guardrails/redact.ts) has always documented as a later task's job —
+ * `buildMaskSpecs` itself stays a pure pass-through/validation seam.
+ */
+function buildRunMaskSpecs(capability: Capability): LocatorSpec[] {
+  const piiParamNames = new Set(capability.inputParams.filter((p) => p.pii).map((p) => p.name));
+  const specs: LocatorSpec[] = [];
+  for (const step of capability.steps) {
+    if (step.target && step.paramRef && piiParamNames.has(step.paramRef)) {
+      specs.push(step.target);
+    }
+  }
+  for (const output of capability.outputs) {
+    if (output.pii) {
+      specs.push(output.source);
+    }
+  }
+  return buildMaskSpecs(specs);
+}
+
+/**
  * Reads, parses, and schema-validates a capability file, with a clean, specific diagnostic
  * for each failure mode — a missing file, malformed JSON, or JSON that doesn't match the
  * `Capability` schema each get their own message, consistent with `resolveParams`'s handling
@@ -178,13 +205,28 @@ function loadCapability(path: string): Capability {
 
 async function main(): Promise<void> {
   const capabilityPath = resolvePath(opts.capability);
-  const capability = loadCapability(capabilityPath);
+  const rawCapability = loadCapability(capabilityPath);
 
-  if (opts.tenant && !Object.prototype.hasOwnProperty.call(capability.tenantOverrides ?? {}, opts.tenant)) {
-    console.warn(
-      `--tenant "${opts.tenant}" given but capability.tenantOverrides has no entry for it; ` +
-        `proceeding without a merge (tenantOverrides deep-merge is a later task's job).`,
-    );
+  // Tenant-override deep-merge (SPEC §12, implemented here — see src/replay/tenantOverride.ts
+  // for the full rationale on exactly which fields a tenant override touches for this app).
+  // `capability` from this point on is ALWAYS the (possibly merged) copy every other part of
+  // this function uses — the pre-merge `rawCapability` is never referenced again, so a run
+  // with `--tenant b` genuinely exercises the merged entryPoint/steps end to end, including
+  // the `--inject` origin resolution below (a real gap in an earlier draft: injecting against
+  // `rawCapability.entryPoint`'s tenant-A origin would silently no-op for a tenant-B run
+  // pointed at a different port).
+  let capability = rawCapability;
+  if (opts.tenant) {
+    const override = (rawCapability.tenantOverrides as Record<string, TenantOverride> | undefined)?.[opts.tenant];
+    if (!override) {
+      console.warn(
+        `--tenant "${opts.tenant}" given but capability.tenantOverrides has no entry for it; ` +
+          `proceeding without a merge.`,
+      );
+    } else {
+      capability = applyTenantOverride(rawCapability, override);
+      console.log(`[tenant] merged tenantOverrides.${opts.tenant}: entryPoint=${capability.entryPoint}`);
+    }
   }
 
   const cliParams = parseCliParams(opts.param);
@@ -248,15 +290,105 @@ async function main(): Promise<void> {
       devInjected: opts.inject === "stuck",
     });
 
+    // ---- Task 9 evidence capture (SPEC §11) -------------------------------------------
+    // `evidencePaths` collects every file this CLI itself writes into evidenceDir, relative
+    // to evidenceDir (same convention InterventionRequest.screenshotPath/snapshotPath already
+    // use — see src/escalation/intervention.ts). log.jsonl is written incrementally by
+    // `logger` throughout the run, so it's always present once a run starts.
+    const evidencePaths: string[] = ["log.jsonl"];
+    const runMaskSpecs = buildRunMaskSpecs(capability);
+    const screenshotsDir = joinPath(evidenceDir, "screenshots");
+    let stepCounter = 0;
+    let failureCaptured = false;
+    // Every Nth step also gets a screenshot, independent of pass/fail — chosen as a small,
+    // fixed cadence that gives a reviewer a handful of visual checkpoints through a run
+    // without flooding the evidence folder on a capability with many steps (this artifact
+    // has 7 steps, so N=3 yields 2 periodic screenshots plus one on the final successful
+    // step — see step_complete's own N-based capture below).
+    const SCREENSHOT_EVERY_N_STEPS = 3;
+
+    async function captureScreenshot(idx: number, event: string): Promise<void> {
+      try {
+        mkdirSync(screenshotsDir, { recursive: true });
+        const png = await guardedSurface.screenshot({ maskSpecs: runMaskSpecs });
+        const relPath = `screenshots/${String(idx).padStart(3, "0")}-${event}.png`;
+        writeFileSync(joinPath(evidenceDir, relPath), png);
+        evidencePaths.push(relPath);
+      } catch {
+        // Best-effort: a screenshot failing must never break the run itself.
+      }
+    }
+
+    function captureSnapshot(stepId: string, snapshotText: string): void {
+      try {
+        const relPath = `snapshot-${stepId}.txt`;
+        writeFileSync(joinPath(evidenceDir, relPath), snapshotText, "utf-8");
+        evidencePaths.push(relPath);
+      } catch {
+        // Best-effort, same as captureScreenshot.
+      }
+    }
+
     const result = await executeCapability(capability, params, guardedSurface, {
       runId,
       fingerprintFn: (observation) => computeFingerprint(observation.snapshotText),
       tenant: opts.tenant,
       hooks: { onEscalationNeeded },
       logger,
+      // Fires once per step (success or checkpoint-failure — see executor.ts's doc comment
+      // on ExecutorOptions.onStepTrace for exactly which two call sites). Always-on-failure
+      // and every-Nth-step screenshots both funnel through here for any step that actually
+      // reaches this hook; failure paths that exit BEFORE a step ever produces a StepTrace
+      // (business_outcome / hard_failure / locator_unresolved / escalated / a fingerprint
+      // mismatch) are covered by the run-level fallback capture below instead.
+      onStepTrace: async (trace, observation) => {
+        stepCounter += 1;
+        const isCheckpointFailure = trace.checkpointPassed === false;
+        if (isCheckpointFailure) {
+          failureCaptured = true;
+          await captureScreenshot(stepCounter, "failure");
+          captureSnapshot(trace.stepId, observation.snapshotText);
+        } else if (stepCounter % SCREENSHOT_EVERY_N_STEPS === 0) {
+          await captureScreenshot(stepCounter, trace.stepId);
+        }
+      },
     });
 
-    console.log(JSON.stringify(result, null, 2));
+    // Run-level fallback: SPEC §11 requires a failure screenshot + snapshot-<step>.txt
+    // regardless of which failure path produced `status: "failure"`, including the ones that
+    // never reach `onStepTrace` at all (see the comment above). Uses the surface's live state
+    // right after executeCapability returns — the browser/page is still open at this point.
+    if (result.status === "failure" && !failureCaptured) {
+      try {
+        const obs = await guardedSurface.observe();
+        stepCounter += 1;
+        await captureScreenshot(stepCounter, "failure");
+        captureSnapshot(result.failedStepId ?? "run", obs.snapshotText);
+      } catch {
+        // Best-effort.
+      }
+    }
+
+    // control.json / intervention.json are written independently by createEscalationHook
+    // (src/escalation/session.ts) whenever this run actually escalates — list them here too
+    // if they exist, so `result.evidencePaths` reflects the FULL run folder, not just the
+    // files this function itself wrote.
+    for (const extra of ["control.json", "intervention.json"]) {
+      if (existsSync(joinPath(evidenceDir, extra))) {
+        evidencePaths.push(extra);
+      }
+    }
+    evidencePaths.push("result.json");
+
+    const finalResult: ReplayResult = { ...result, evidencePaths };
+    // Redacted through the SAME choke point as everything else (src/guardrails/redact.ts) —
+    // defensive: ReplayResult shouldn't normally carry a raw secret/pii value, but this keeps
+    // the invariant "nothing reaches disk without going through redactDeep first" absolute
+    // rather than resting on that being true by construction everywhere upstream.
+    const redactedResult = redactDeep(finalResult, policy) as ReplayResult;
+    writeFileSync(joinPath(evidenceDir, "result.json"), JSON.stringify(redactedResult, null, 2), "utf-8");
+
+    console.log(JSON.stringify(finalResult, null, 2));
     process.exitCode = result.status === "success" || result.status === "business_outcome" ? 0 : 1;
   } finally {
     await context.close();
