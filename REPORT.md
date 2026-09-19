@@ -71,16 +71,17 @@ checkpoints — no `sleep`. Outcome detection (`src/replay/outcomes.ts`) checks 
 (`alert`/`alertdialog`/dialog/`/error|denied|not found|session (expired|timed out)|try
 again/i`) that escalates rather than silently continuing on anything undeclared.
 
-Two real bugs were found and fixed in this core loop during Task 5's code review:
+Two real bugs were found and fixed via code review during the core loop's development:
 
-- **Redaction prefix leak** (`src/guardrails/redact.ts`): exact-value scrubbing replaced
-  registered secret/PII values in Set-insertion order; if a shorter registered value (e.g.
-  `"pass1"`) was a prefix of a longer one registered later (`"pass12345"`), the shorter
-  value's replace pass would fragment the longer value's occurrence and leave its suffix
-  (`"2345"`) unredacted in the log. Fixed by sorting registered values longest-first before
-  the replace loop (`redact.ts` lines 54-69) — verified present in the current file, with the
-  fix's own rationale documented inline.
-- **Irreversible-step double-invocation** (`src/replay/executor.ts`): an irreversible step's
+- **Redaction prefix leak** (`src/guardrails/redact.ts`, found and fixed during Task 4's code
+  review): exact-value scrubbing replaced registered secret/PII values in Set-insertion order;
+  if a shorter registered value (e.g. `"pass1"`) was a prefix of a longer one registered later
+  (`"pass12345"`), the shorter value's replace pass would fragment the longer value's
+  occurrence and leave its suffix (`"2345"`) unredacted in the log. Fixed by sorting registered
+  values longest-first before the replace loop (`redact.ts` lines 54-69) — verified present in
+  the current file, with the fix's own rationale documented inline.
+- **Irreversible-step double-invocation** (`src/replay/executor.ts`, found and fixed during
+  Task 5's code review): an irreversible step's
   action could originally be re-invoked via the outcome-recovery `retry`/`wait_and_retry`
   path — a second, unguarded call site into `surface.act()` existed alongside the properly
   guarded one. A narrow patch was flagged by code review as non-centralized and refactored:
