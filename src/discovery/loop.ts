@@ -334,8 +334,26 @@ export async function runDiscoveryLoop(
     options.onTurn?.(turn);
   }
 
-  function bumpRefAction(kind: string, ref: string): number {
-    const key = `${kind}:${ref}`;
+  /**
+   * Stuck heuristic 2's key — MUST be stable across turns for the SAME logical element, not
+   * the raw ref string. `perception/snapshot.ts` resets ref numbering to `e0` on every single
+   * `observe()` call (confirmed directly against real evidence: turn 2's `e2` was the login
+   * button, turn 5's `e2` was an unrelated result link), so a literal `${kind}:${ref}` key
+   * conflates completely different elements that happen to share a recycled ref number across
+   * DIFFERENT pages/turns — a real run with, say, this app's persistent "Home" nav link
+   * (always ref `e0` wherever it appears) clicked 3 times for genuine reasons, or any element
+   * whose ref number happens to recur, would false-trigger "stuck" under the old scheme.
+   * Keying on the resolved `role+name` (stable identity, already computed by
+   * `findRefRoleName` for risk classification/locator capture at every ref-based dispatch
+   * site) fixes this the same way heuristic 1's own false-positive was fixed. Falls back to
+   * the raw ref (with a `kind` prefix, so it still can't collide across action kinds) only
+   * when no role/name could be found — a defensive fallback, not the expected path.
+   */
+  function elementKey(kind: string, ref: string, info: { role: string; name: string } | undefined): string {
+    return info ? `${kind}:${info.role}|${info.name}` : `${kind}:ref:${ref}`;
+  }
+
+  function bumpRefAction(key: string): number {
     const next = (refActionCounts.get(key) ?? 0) + 1;
     refActionCounts.set(key, next);
     return next;
@@ -569,8 +587,8 @@ export async function runDiscoveryLoop(
         const capturedLocators = await captureLocators([{ ref: input.ref, roleNameHint: info }], options.captureLocator);
         await surface.act({ kind: "click", ref: input.ref, risk });
         await surface.waitForSettle(SETTLE_TIMEOUT_MS);
-        bumpRefAction("click", input.ref);
-        actionKey = `click:${input.ref}`;
+        actionKey = elementKey("click", input.ref, info);
+        bumpRefAction(actionKey);
         carry = [...extraResults, okResult(toolCall.id, `Clicked ${input.ref}.`)];
         recordTurn({ observation, toolCall, usage, model, retried, capturedLocators, acted: true });
       } else if (name === "type_text") {
@@ -579,8 +597,8 @@ export async function runDiscoveryLoop(
         const capturedLocators = await captureLocators([{ ref: input.ref, roleNameHint: info }], options.captureLocator);
         await surface.act({ kind: "fill", ref: input.ref, value: input.text, risk: "reversible" });
         await surface.waitForSettle(SETTLE_TIMEOUT_MS);
-        bumpRefAction("type_text", input.ref);
-        actionKey = `type_text:${input.ref}`;
+        actionKey = elementKey("type_text", input.ref, info);
+        bumpRefAction(actionKey);
         carry = [...extraResults, okResult(toolCall.id, `Typed into ${input.ref}.`)];
         recordTurn({ observation, toolCall, usage, model, retried, capturedLocators, acted: true });
       } else if (name === "select_option") {
@@ -593,16 +611,18 @@ export async function runDiscoveryLoop(
         const capturedLocators = await captureLocators([{ ref: input.ref, roleNameHint: info }], options.captureLocator);
         await surface.act({ kind: "select_option", ref: input.ref, value: input.value, risk });
         await surface.waitForSettle(SETTLE_TIMEOUT_MS);
-        bumpRefAction("select_option", input.ref);
-        actionKey = `select_option:${input.ref}`;
+        actionKey = elementKey("select_option", input.ref, info);
+        bumpRefAction(actionKey);
         carry = [...extraResults, okResult(toolCall.id, `Selected "${input.value}" on ${input.ref}.`)];
         recordTurn({ observation, toolCall, usage, model, retried, capturedLocators, acted: true });
       } else if (name === "navigate") {
         const input = parsed.data as NavigateInputT;
         await surface.act({ kind: "navigate", value: input.url, risk: "safe" });
         await surface.waitForSettle(SETTLE_TIMEOUT_MS);
-        bumpRefAction("navigate", input.url);
+        // Keyed on the URL itself, not a ref — navigate has no ref at all, and a URL is
+        // already a stable identity (no recycling concern).
         actionKey = `navigate:${input.url}`;
+        bumpRefAction(actionKey);
         carry = [...extraResults, okResult(toolCall.id, `Navigated to ${input.url}.`)];
         recordTurn({ observation, toolCall, usage, model, retried, acted: true });
       } else if (name === "extract") {
@@ -611,7 +631,7 @@ export async function runDiscoveryLoop(
         const capturedLocators = await captureLocators([{ ref: input.ref, roleNameHint: info }], options.captureLocator);
         await surface.act({ kind: "extract", ref: input.ref, extractName: input.name, risk: "safe" });
         await surface.waitForSettle(SETTLE_TIMEOUT_MS);
-        actionKey = `extract:${input.ref}`;
+        actionKey = elementKey("extract", input.ref, info);
         carry = [
           ...extraResults,
           okResult(toolCall.id, `Declared candidate output "${input.name}" from ${input.ref}.`),
@@ -646,13 +666,14 @@ export async function runDiscoveryLoop(
       };
     }
 
-    // ---- stuck heuristic 2: same (ref, action-kind) repeated 3x ----
+    // ---- stuck heuristic 2: same (element, action-kind) repeated 3x — keyed on stable
+    // role+name identity via elementKey(), NOT the raw (recycled-every-turn) ref string ----
     for (const count of refActionCounts.values()) {
       if (count >= SAME_REF_ACTION_LIMIT) {
         return {
           status: "stuck",
           turns,
-          terminationReason: `the same (ref, action) pair was repeated ${SAME_REF_ACTION_LIMIT}+ times`,
+          terminationReason: `the same (element, action) pair was repeated ${SAME_REF_ACTION_LIMIT}+ times`,
         };
       }
     }

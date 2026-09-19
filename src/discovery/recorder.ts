@@ -262,6 +262,16 @@ export function recordCapability(
       id: `s${index + 1}`,
       description: describeStep(toolCall.name, input, roleName),
       action,
+      // Deliberately the REAL, unmodified classifyActionRisk (roleName.name passed straight
+      // through, no filtering) — per SPEC §9, the RECORDED step's risk tag is what replay-time
+      // guarding relies on, so it must reflect genuine risk, not the live-discovery-only
+      // carve-out. Contrast with discovery/loop.ts's `riskClassificationName()`, which DOES
+      // filter out the single proven-meaningless synthesized name "submit" for LIVE
+      // in-the-moment discovery gating only (see that function's doc comment for the full
+      // "Submit" collision story) — that asymmetry is intentional: a live click shouldn't
+      // block on a false positive, but a replay of the recorded capability should still see
+      // this step tagged "irreversible" and escalate, which is exactly what happens (see
+      // artifacts/lookup_member_balance_discovered.json's "s5" step and REPORT.md).
       risk: classifyActionRisk({ buttonText: roleName?.name, accessibleName: roleName?.name }, policy),
       timeoutMs: 5000,
     };

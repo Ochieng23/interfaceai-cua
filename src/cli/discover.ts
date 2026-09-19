@@ -230,13 +230,20 @@ async function main(): Promise<void> {
     }
 
     async function captureLocator(ref: string, roleNameHint?: { role: string; name: string }) {
-      const locator = await playwrightSurface.getLocatorForRef(ref);
-      if (!locator) return undefined;
+      const resolved = await playwrightSurface.getLocatorForRef(ref);
+      if (!resolved) return undefined;
       // roleNameHint MUST be forwarded — see perception/enrich.ts's doc comment on
       // enrichLocator: deriving role/name live via Locator.ariaSnapshot() permanently
       // invalidates this aria-ref-sourced locator's native ref, breaking the surface.act()
       // call this same turn still needs to make against the same ref.
-      return enrichLocator(locator, page, roleNameHint);
+      //
+      // `resolved.root` (NOT always `page`) MUST be used as the uniqueness-check root: this
+      // app's member-search flow happens inside a same-origin iframe, and `Page.getByRole`/
+      // `Page.locator` don't search inside iframes — passing `page` unconditionally silently
+      // dropped the role tier (and left the css tier's uniqueness unconfirmed) for every
+      // iframe-scoped step on a real discovery run. `getLocatorForRef` derives the correct
+      // `Page | Frame` root from the ref's own tracked `frameIndex`.
+      return enrichLocator(resolved.locator, resolved.root, roleNameHint);
     }
 
     const result = await runDiscoveryLoop(guardedSurface, opts.goal, boundParams, {

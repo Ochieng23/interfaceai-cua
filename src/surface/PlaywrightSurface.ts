@@ -73,22 +73,38 @@ export class PlaywrightSurface implements Surface {
 
   /**
    * (Task 7 addition — discovery/recorder threading.) Resolves ref `ref` from the MOST
-   * RECENT `observe()` call to its live Playwright `Locator`, or `undefined` if it isn't
-   * present or no longer resolves uniquely. Exists so a caller (the discovery loop) can hand
-   * this live element to `enrichLocator()` (`src/perception/enrich.ts`) at the exact moment
-   * the model acts on it — critically, BEFORE any subsequent navigation, since this app's
-   * form POSTs cause full page reloads that invalidate Playwright's own native `aria-ref=`
-   * resolution (see snapshot.ts's finding #2). Waiting until after a whole discovery run
-   * completes to enrich locators would silently fail for every step before the run's last
-   * navigation — so this method is called live, per-turn, not once at the end. See
-   * `src/discovery/loop.ts`'s `captureLocators` for the call site.
+   * RECENT `observe()` call to its live Playwright `Locator` AND the `Page`/`Frame` it
+   * actually lives in, or `undefined` if it isn't present or no longer resolves uniquely.
+   * Exists so a caller (the discovery loop) can hand this live element to `enrichLocator()`
+   * (`src/perception/enrich.ts`) at the exact moment the model acts on it — critically, BEFORE
+   * any subsequent navigation, since this app's form POSTs cause full page reloads that
+   * invalidate Playwright's own native `aria-ref=` resolution (see snapshot.ts's finding #2).
+   * Waiting until after a whole discovery run completes to enrich locators would silently fail
+   * for every step before the run's last navigation — so this method is called live, per-turn,
+   * not once at the end. See `src/discovery/loop.ts`'s `captureLocators` for the call site.
+   *
+   * The returned `root` (`Page` for a ref in the main frame, the specific `Frame` for a ref
+   * inside a same-origin iframe — via `SnapshotRef.frameIndex`, which `perception/snapshot.ts`
+   * already tracks per ref) MUST be used as `enrichLocator`'s uniqueness-check root, not always
+   * `this.page` — `Page.getByRole`/`Page.locator` do NOT search inside iframes (only
+   * `Frame.getByRole`/`Frame.locator` do), so enriching an iframe-scoped element against the
+   * top-level page silently reports "0 matches" for tiers that would genuinely be unique
+   * within the correct frame. Confirmed as a real bug from a live discovery run: the mock
+   * app's member-search flow happens entirely inside a same-origin iframe embedded on `/`,
+   * and every locator captured for it before this fix had its role tier wrongly dropped.
    */
-  async getLocatorForRef(ref: string): Promise<PWLocator | undefined> {
+  async getLocatorForRef(ref: string): Promise<{ locator: PWLocator; root: Page | Frame } | undefined> {
     const info = this.lastRefs?.get(ref);
     if (!info) return undefined;
     const locator = this.page.locator(`aria-ref=${info.nativeRef}`);
     const count = await locator.count().catch(() => 0);
-    return count === 1 ? locator : undefined;
+    if (count !== 1) return undefined;
+    // frames()[0] is always the main frame (Playwright guarantee — see snapshot.ts's own
+    // header comment); using `this.page` there rather than `frames()[0]` is equivalent for
+    // getByRole/locator purposes (neither pierces into iframes either way) and matches what
+    // every OTHER caller of enrichLocator in this codebase already passes for the main frame.
+    const root: Page | Frame = info.frameIndex === 0 ? this.page : this.page.frames()[info.frameIndex] ?? this.page;
+    return { locator, root };
   }
 
   async observe(): Promise<Observation> {
