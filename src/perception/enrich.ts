@@ -67,9 +67,22 @@ async function getRoleAndName(locator: Locator): Promise<RoleAndName | null> {
 }
 
 /** Tier 1: role + accessibleName, included only if unique on the page (checked with
- * `exact: true`, matching SPEC §6 / §8's determinism rule). */
-async function buildRoleTier(locator: Locator, root: LocatorRoot, rationale: string[]): Promise<LocatorRecord | null> {
-  const info = await getRoleAndName(locator);
+ * `exact: true`, matching SPEC §6 / §8's determinism rule).
+ *
+ * `knownRoleName`, when given, is used INSTEAD of calling `getRoleAndName` (which calls
+ * `locator.ariaSnapshot()`) — see this file's "TASK 7 EMPIRICAL FINDING" comment on
+ * `enrichLocator` below for why: that call permanently invalidates an `aria-ref=`-sourced
+ * Locator's native ref. `discovery/loop.ts` already knows the acted-on ref's role/name (it
+ * parses the same line out of the turn's own numbered snapshot text, for risk
+ * classification) and passes it straight through here, skipping the destructive call
+ * entirely for the one caller that actually hits this edge case. */
+async function buildRoleTier(
+  locator: Locator,
+  root: LocatorRoot,
+  rationale: string[],
+  knownRoleName?: RoleAndName,
+): Promise<LocatorRecord | null> {
+  const info = knownRoleName ?? (await getRoleAndName(locator));
   if (!info) {
     rationale.push("role tier dropped (no computable role/accessible-name)");
     return null;
@@ -269,11 +282,45 @@ async function buildVisualAnchorTier(locator: Locator, rationale: string[]): Pro
   return { kind: "visual_anchor", bbox: box, nearbyText };
 }
 
-export async function enrichLocator(locator: Locator, page: LocatorRoot): Promise<LocatorSpec> {
+/**
+ * `roleNameHint`, when given, is used for the role tier instead of calling
+ * `Locator.ariaSnapshot()` to derive it live.
+ *
+ * ---------------------------------------------------------------------------------------
+ * TASK 7 EMPIRICAL FINDING (why this parameter exists): when `locator` was itself resolved
+ * via Playwright's `aria-ref=` selector engine — exactly what the discovery loop hands in,
+ * via `PlaywrightSurface.getLocatorForRef` — calling `locator.ariaSnapshot()` (the DEFAULT,
+ * non-"ai" mode; what the role tier's `getRoleAndName` used to always call) PERMANENTLY
+ * invalidates that specific native ref token. Confirmed empirically against the live mock
+ * app: immediately after `.ariaSnapshot()` resolves, a FRESH
+ * `page.locator('aria-ref=<same token>').count()` call returns 0, not 1, even though nothing
+ * else about the page changed. `elementHandle()` and `boundingBox()` (what
+ * `buildCssTier`/`buildXPathTier`/`buildTextAnchorTier`/`buildVisualAnchorTier` use) do NOT
+ * have this effect — also verified empirically. This is NOT a hypothetical: it broke the very
+ * first real discovery turn end to end. The loop calls `captureLocator(ref)` (→ this
+ * function) BEFORE `surface.act({ref})` (see `discovery/loop.ts`'s header comment for why
+ * enrichment has to happen before the action, not after — form-POST navigations invalidate
+ * refs too). Without a hint, the role tier's `ariaSnapshot()` call silently killed the ref
+ * before `act()` ever got to resolve it, which then failed with "no longer resolves uniquely
+ * (count=0)".
+ *
+ * The fix: `discovery/loop.ts` already knows the acted-on ref's role/name (it parses the same
+ * line out of the turn's own numbered snapshot text, for risk classification) and passes it
+ * straight through as `roleNameHint`, skipping `getRoleAndName`'s destructive
+ * `ariaSnapshot()` call entirely for that call path. Every other caller (none currently exist
+ * outside discovery, but a future one might) still gets the original live-derived behavior
+ * by omitting the hint.
+ * ---------------------------------------------------------------------------------------
+ */
+export async function enrichLocator(
+  locator: Locator,
+  page: LocatorRoot,
+  roleNameHint?: { role: string; name: string },
+): Promise<LocatorSpec> {
   const rationale: string[] = [];
   const chain: LocatorRecord[] = [];
 
-  const role = await buildRoleTier(locator, page, rationale);
+  const role = await buildRoleTier(locator, page, rationale, roleNameHint);
   if (role) chain.push(role);
 
   const css = await buildCssTier(locator, page, rationale);

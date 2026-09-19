@@ -71,6 +71,26 @@ export class PlaywrightSurface implements Surface {
     this.page = page;
   }
 
+  /**
+   * (Task 7 addition — discovery/recorder threading.) Resolves ref `ref` from the MOST
+   * RECENT `observe()` call to its live Playwright `Locator`, or `undefined` if it isn't
+   * present or no longer resolves uniquely. Exists so a caller (the discovery loop) can hand
+   * this live element to `enrichLocator()` (`src/perception/enrich.ts`) at the exact moment
+   * the model acts on it — critically, BEFORE any subsequent navigation, since this app's
+   * form POSTs cause full page reloads that invalidate Playwright's own native `aria-ref=`
+   * resolution (see snapshot.ts's finding #2). Waiting until after a whole discovery run
+   * completes to enrich locators would silently fail for every step before the run's last
+   * navigation — so this method is called live, per-turn, not once at the end. See
+   * `src/discovery/loop.ts`'s `captureLocators` for the call site.
+   */
+  async getLocatorForRef(ref: string): Promise<PWLocator | undefined> {
+    const info = this.lastRefs?.get(ref);
+    if (!info) return undefined;
+    const locator = this.page.locator(`aria-ref=${info.nativeRef}`);
+    const count = await locator.count().catch(() => 0);
+    return count === 1 ? locator : undefined;
+  }
+
   async observe(): Promise<Observation> {
     const snap = await buildSnapshot(this.page);
     this.lastRefs = snap.refs;
