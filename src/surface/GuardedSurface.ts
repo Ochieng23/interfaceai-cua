@@ -126,7 +126,7 @@ export class GuardedSurface implements Surface {
     if (!match) {
       return action;
     }
-    const name = match[1] as string;
+    const name = match[1];
     const resolved = this.secretProvider(name);
     if (resolved === undefined) {
       // Do not include the env var VALUE (there isn't one) — the NAME is fine to mention.

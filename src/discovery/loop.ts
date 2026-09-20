@@ -413,10 +413,10 @@ export async function runDiscoveryLoop(
         });
       } else {
         for (let i = 1; i < result.toolUseBlocks.length; i += 1) {
-          const extra = result.toolUseBlocks[i] as Anthropic.ToolUseBlock;
+          const extra = result.toolUseBlocks[i];
           correction.push(errResult(extra.id, "Ignored: only one tool call is allowed per turn."));
         }
-        const first = result.toolUseBlocks[0] as Anthropic.ToolUseBlock;
+        const first = result.toolUseBlocks[0];
         correction.push(
           errResult(
             first.id,
@@ -438,10 +438,10 @@ export async function runDiscoveryLoop(
     const extraResults: Anthropic.ToolResultBlockParam[] = [];
 
     if (result.toolUseBlocks.length >= 1) {
-      const primary = result.toolUseBlocks[0] as Anthropic.ToolUseBlock;
+      const primary = result.toolUseBlocks[0];
       toolCall = { name: primary.name, input: primary.input, id: primary.id };
       for (let i = 1; i < result.toolUseBlocks.length; i += 1) {
-        const extra = result.toolUseBlocks[i] as Anthropic.ToolUseBlock;
+        const extra = result.toolUseBlocks[i];
         extraResults.push(errResult(extra.id, "Ignored: only one tool call is allowed per turn."));
       }
     }

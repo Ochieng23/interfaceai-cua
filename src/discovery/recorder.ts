@@ -76,7 +76,7 @@ const DEFAULT_SEEDED_OUTCOMES_PATH = "outcomes/cu-console.yaml";
 
 function loadSeededOutcomes(path: string): OutcomeSpec[] {
   const raw = readFileSync(resolvePath(path), "utf-8");
-  const parsed = parseYaml(raw);
+  const parsed: unknown = parseYaml(raw);
   if (!Array.isArray(parsed)) {
     throw new Error(`seeded outcomes file ${path} did not parse to a YAML array`);
   }
@@ -91,9 +91,19 @@ function loadSeededOutcomes(path: string): OutcomeSpec[] {
         `seeded outcomes file ${path}, entry ${i} does not match OutcomeSpec: ${
           err instanceof Error ? err.message : String(err)
         }`,
+        { cause: err },
       );
     }
   });
+}
+
+/** Coerces a raw (unknown-typed, LLM-sourced) tool-call field to a string, WITHOUT falling
+ * back to `Object.prototype.toString` for a non-string value (e.g. a hallucinated object where
+ * a string was expected would otherwise silently become the literal text "[object Object]").
+ * Treats anything that isn't already a string as absent, matching the `?? ""` fallback
+ * semantics every call site here already wants. */
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }
 
 const ACTION_MAP: Record<string, Step["action"]> = {
@@ -105,7 +115,7 @@ const ACTION_MAP: Record<string, Step["action"]> = {
 };
 
 function describeStep(toolName: string, input: Record<string, unknown>, roleName?: { name: string }): string {
-  const label = roleName?.name && roleName.name.length > 0 ? `"${roleName.name}"` : String(input.ref ?? "");
+  const label = roleName?.name && roleName.name.length > 0 ? `"${roleName.name}"` : asString(input.ref);
   switch (toolName) {
     case "click":
       return `Click ${label}.`;
@@ -233,8 +243,8 @@ export function recordCapability(
   const resolveLocator = options.resolveLocator ?? defaultLocatorResolver;
   const policy = loadPolicy();
   const { checkpoint, outputs: rawOutputs, summary } = result.goalCompleteArgs;
-  const finalTurn = result.turns[result.turns.length - 1] as DiscoveryTurn;
-  const firstTurn = result.turns[0] as DiscoveryTurn;
+  const finalTurn = result.turns[result.turns.length - 1];
+  const firstTurn = result.turns[0];
 
   // ---- steps: every turn that genuinely performed an action --------------------------
   const actedTurns = result.turns.filter((t): t is DiscoveryTurn & { toolCall: NonNullable<DiscoveryTurn["toolCall"]> } =>
@@ -288,7 +298,7 @@ export function recordCapability(
     } else if (ref) {
       step.target = resolveLocator(turn, ref);
       if (toolCall.name === "type_text") {
-        const text = String(input.text ?? "");
+        const text = asString(input.text);
         const paramName = matchBoundParam(text, boundParams);
         if (paramName) {
           step.paramRef = paramName;
@@ -296,7 +306,7 @@ export function recordCapability(
           step.valueLiteral = text;
         }
       } else if (toolCall.name === "select_option") {
-        const value = String(input.value ?? "");
+        const value = asString(input.value);
         const paramName = matchBoundParam(value, boundParams);
         if (paramName) {
           step.paramRef = paramName;

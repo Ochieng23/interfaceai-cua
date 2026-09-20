@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 
-import { runDiscoveryLoop, type DiscoveryResult } from "../src/discovery/loop";
+import { runDiscoveryLoop } from "../src/discovery/loop";
 import { FakeSurface, type FakePageState } from "../src/surface/FakeSurface";
 import type { Observation, Surface, SurfaceAction, Resolved, Extraction } from "../src/surface/Surface";
 import { LocatorUnresolvedError } from "../src/surface/Surface";

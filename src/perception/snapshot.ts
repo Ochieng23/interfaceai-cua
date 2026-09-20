@@ -138,9 +138,9 @@ export interface ParsedInteractiveLine {
 export function parseInteractiveLine(line: string): ParsedInteractiveLine | null {
   const m = INTERACTIVE_LINE_RE.exec(line);
   if (!m) return null;
-  const ref = m[1] as string;
-  const role = m[2] as string;
-  const name = m[3] as string;
+  const ref = m[1];
+  const role = m[2];
+  const name = m[3];
   return { ref, role, name };
 }
 
@@ -309,7 +309,7 @@ export async function buildSnapshot(page: Page): Promise<SnapshotResult> {
   const nextRefIndex = { n: 0 };
 
   for (let frameIndex = 0; frameIndex < frames.length; frameIndex += 1) {
-    const frame = frames[frameIndex] as Frame;
+    const frame = frames[frameIndex];
     let json: unknown;
     try {
       json = await frame.locator("body").ariaSnapshotJSON({ mode: "ai", timeout: 5000 });

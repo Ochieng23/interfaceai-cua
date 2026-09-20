@@ -138,7 +138,7 @@ function controlPath(runId: string): string {
 export function readControl(runId: string): SessionControlType | null {
   const p = controlPath(runId);
   if (!existsSync(p)) return null;
-  const raw = JSON.parse(readFileSync(p, "utf-8"));
+  const raw: unknown = JSON.parse(readFileSync(p, "utf-8"));
   return SessionControl.parse(raw);
 }
 

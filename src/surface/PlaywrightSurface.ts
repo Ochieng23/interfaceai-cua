@@ -234,7 +234,7 @@ export class PlaywrightSurface implements Surface {
   private async resolveTarget(spec: LocatorSpec): Promise<ResolvedTarget | null> {
     const frames: Frame[] = this.page.frames();
     for (let tier = 0; tier < spec.strategyChain.length; tier += 1) {
-      const loc = spec.strategyChain[tier] as LocatorRecord;
+      const loc = spec.strategyChain[tier];
       for (const frame of frames) {
         const candidates = this.buildCandidates(frame, loc);
         for (const candidate of candidates) {

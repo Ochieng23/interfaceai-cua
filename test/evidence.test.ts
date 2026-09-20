@@ -41,7 +41,7 @@ describe("EvidenceLogger", () => {
     expect(existsSync(nestedLogPath)).toBe(true);
     const contents = readFileSync(nestedLogPath, "utf-8");
     expect(contents.trim().length).toBeGreaterThan(0);
-    expect(JSON.parse(contents.trim().split("\n")[0] as string)).toEqual({ event: "started" });
+    expect(JSON.parse(contents.trim().split("\n")[0])).toEqual({ event: "started" });
   });
 
   it("appends one JSON line per log() call", () => {
@@ -55,8 +55,8 @@ describe("EvidenceLogger", () => {
 
     const lines = readFileSync(logPath, "utf-8").trim().split("\n");
     expect(lines).toHaveLength(2);
-    expect(JSON.parse(lines[0] as string)).toEqual({ event: "first" });
-    expect(JSON.parse(lines[1] as string)).toEqual({ event: "second" });
+    expect(JSON.parse(lines[0])).toEqual({ event: "first" });
+    expect(JSON.parse(lines[1])).toEqual({ event: "second" });
   });
 
   it("redacts a registered secret via the redactDeep choke point before writing", () => {

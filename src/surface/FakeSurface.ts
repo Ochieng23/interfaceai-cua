@@ -78,7 +78,7 @@ export class FakeSurface implements Surface {
   }
 
   private get current(): FakePageState {
-    return this.states[this.index] as FakePageState;
+    return this.states[this.index];
   }
 
   /** Manually move to the next scripted state, for tests wanting fine control. */
@@ -114,7 +114,7 @@ export class FakeSurface implements Surface {
       return null;
     }
     for (let tier = 0; tier < spec.strategyChain.length; tier += 1) {
-      const locator = spec.strategyChain[tier] as Locator;
+      const locator = spec.strategyChain[tier];
       if (state.resolves(locator, tier)) {
         return { tier, kind: locator.kind };
       }
@@ -140,7 +140,7 @@ export class FakeSurface implements Surface {
     ].filter((k): k is string => typeof k === "string");
     for (const key of candidateKeys) {
       if (key in state.texts) {
-        return state.texts[key] as string;
+        return state.texts[key];
       }
     }
     return null;

@@ -140,7 +140,7 @@ async function buildCssTier(locator: Locator, root: LocatorRoot, rationale: stri
     // anonymous, as below — an anonymous per-iteration computation, not a named helper.
     const fullPath: string = await handle.evaluate((el) => {
       const parts: string[] = [];
-      let current: Element | null = el as Element;
+      let current: Element | null = el;
       while (current && current.tagName.toLowerCase() !== "html") {
         let sel = current.tagName.toLowerCase();
         const parent: Element | null = current.parentElement;
@@ -183,7 +183,7 @@ async function buildXPathTier(locator: Locator): Promise<LocatorRecord | null> {
     // same esbuild/tsx `__name` reason.
     const xpath: string = await handle.evaluate((el) => {
       const parts: string[] = [];
-      let current: Element | null = el as Element;
+      let current: Element | null = el;
       while (current) {
         const parent: Element | null = current.parentElement;
         const tag = current.tagName.toLowerCase();

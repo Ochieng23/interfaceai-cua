@@ -48,6 +48,7 @@ for this README:
 npm run mock-app                 # terminal 1 — http://localhost:4173
 npm test                         # 13 test files / 121 tests, all against FakeSurface, no browser
 npm run typecheck                # tsc --noEmit, zero errors
+npm run lint                     # eslint . — added post-review at explicit user request, zero errors
 npm run replay -- --capability artifacts/lookup_member_balance.json --param member_id=10001
 ```
 

@@ -158,13 +158,13 @@ app.post(`${cfg.prefix}/member/:id/subaccount/submit`, requireSession, (req, res
 // here since it short-circuits earlier, but a genuine bug elsewhere should still render
 // the same "Application error" page rather than a bare Express stack trace). ----------------
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-  // eslint-disable-next-line no-console
+   
   console.error(err);
   res.status(500).send(renderApplicationErrorPage(cfg));
 });
 
 const port = Number(process.env.PORT) || 4173;
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
+   
   console.log(`CU Console (tenant ${cfg.tenant}) listening on http://localhost:${port}${cfg.prefix}/login`);
 });

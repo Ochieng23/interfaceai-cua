@@ -50,7 +50,7 @@ export async function evaluateCheckpoint(
       // Exhaustiveness guard — Checkpoint.kind is a closed Zod enum, so this is unreachable
       // for schema-valid data, but a malformed/forward-incompatible checkpoint should still
       // fail closed rather than throw.
-      console.warn(`evaluateCheckpoint: unknown checkpoint kind "${String((checkpoint as Checkpoint).kind)}"`);
+      console.warn(`evaluateCheckpoint: unknown checkpoint kind "${String((checkpoint).kind)}"`);
       return false;
     }
   }

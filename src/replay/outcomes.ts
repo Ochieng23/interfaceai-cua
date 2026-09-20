@@ -13,7 +13,7 @@
  * fallback, even when the generic regex would also match the same page text.
  */
 
-import type { Checkpoint, OutcomeSpec } from "../schema/capability";
+import type { OutcomeSpec } from "../schema/capability";
 import type { Observation, Surface } from "../surface/Surface";
 import { evaluateCheckpoint } from "./checkpoint";
 
@@ -50,7 +50,7 @@ export async function detectOutcome(
 ): Promise<OutcomeDetectionResult> {
   // 1. Declared outcomes, in artifact order — first match wins.
   for (const outcome of outcomes) {
-    const isMatch = await evaluateCheckpoint(outcome.detection as Checkpoint, observation, surface);
+    const isMatch = await evaluateCheckpoint(outcome.detection, observation, surface);
     if (isMatch) {
       return { matched: true, outcome, source: "declared" };
     }

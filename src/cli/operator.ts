@@ -231,7 +231,11 @@ async function main(): Promise<void> {
   }
 
   await new Promise<void>((resolveFn) => {
-    rl.on("close", async () => {
+    // Listener itself stays a plain, synchronous void-returning function (an `async` function
+    // passed directly to EventEmitter.on would let a rejection go uncaught — Node never awaits
+    // a listener's return value) — the actual async work runs in a `void`-marked IIFE with its
+    // own `.catch()`, so `no-misused-promises` is satisfied by construction, not suppressed.
+    rl.on("close", () => {
       // Deliberately do NOT call browser.close() here: this `browser` object came from
       // `connectOverCDP`, and the automation process still owns the actual browser/page —
       // closing it out from under a still-running (or about-to-resume) replay process would
@@ -250,8 +254,16 @@ async function main(): Promise<void> {
       // queue here so a scripted invocation can't silently lose its last command. An
       // interactive human typing at a real terminal is unaffected either way, since
       // `resume`/`abort` already close `rl` themselves only after their own handler resolves.
-      await queue;
-      resolveFn();
+      void (async () => {
+        await queue;
+        resolveFn();
+      })().catch((err: unknown) => {
+        // `handleLine` already catches its own errors internally, so `queue` rejecting here
+        // should be unreachable in practice — but resolve anyway so the process can't hang
+        // forever, and surface the unexpected error rather than silently swallowing it.
+        console.error("operator: unexpected error while closing:", err);
+        resolveFn();
+      });
     });
   });
   process.exit(0);

@@ -170,7 +170,10 @@ async function main(): Promise<void> {
   const headless = process.env.HEADLESS === "true";
   const browser = await chromium.launch({ headless });
 
-  let exitCode = 0;
+  // No initializer: every path that reaches `process.exitCode = exitCode` below assigns it
+  // exactly once first (the if/else branches inside the try); an exception instead propagates
+  // straight out of the function to the outer `main().catch(...)`, never reading this variable.
+  let exitCode: number;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     const playwrightSurface = new PlaywrightSurface(page);

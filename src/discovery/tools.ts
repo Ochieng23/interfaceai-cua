@@ -135,6 +135,11 @@ const TOOL_DESCRIPTIONS: Record<DiscoveryToolName, string> = {
 
 function buildTool(name: DiscoveryToolName): Anthropic.Tool {
   const schema = TOOL_INPUT_SCHEMAS[name];
+  // `z.ZodTypeAny` (this project's zod import) and `zod-to-json-schema`'s own declared
+  // parameter type are both intentionally "any Zod schema" top-types built on generic `any`
+  // parameters — that's the whole point of accepting an arbitrary schema generically, not a
+  // real loss of type safety at this specific interop boundary between the two packages.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const jsonSchema = zodToJsonSchema(schema) as Record<string, unknown>;
   // Drop the `$schema` draft-version key — Anthropic's Tool.InputSchema doesn't want/need it,
   // and everything else zodToJsonSchema produces for a plain z.object(...) (type, properties,
@@ -144,7 +149,7 @@ function buildTool(name: DiscoveryToolName): Anthropic.Tool {
   return {
     name,
     description: TOOL_DESCRIPTIONS[name],
-    input_schema: { type: "object", ...rest } as Anthropic.Tool.InputSchema,
+    input_schema: { type: "object", ...rest },
   };
 }
 
